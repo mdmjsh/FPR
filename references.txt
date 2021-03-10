@@ -1,0 +1,7 @@
+https://wiki.haskell.org/Anonymous_function
+http://zvon.org/other/haskell/Outputprelude/takeWhile_f.html
+https://www.cs.hmc.edu/~oneill/papers/Sieve-JFP.pdf
+https://wiki.haskell.org/index.php?title=Prime_numbers&oldid=36858#Postponed_Filters_Sieve
+http://learnyouahaskell.com/making-our-own-types-and-typeclasses#type-synonyms
+http://learnyouahaskell.com/modules#data-list
+https://stackoverflow.com/questions/33394756/haskell-function-length-doesnt-work-with-custom-data-type
