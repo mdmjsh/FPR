@@ -342,45 +342,56 @@ As a reminder, the approach to solving this is to calculate all possible deltas 
 with this is that it is clearly an inefficient approach as for every i in n9, the difference has to be calculated against every other i' o(n**2), and then compared 
 against the target deltas of n2. 
 
-A better approach is to use dynamic programming here...
+A better approach is to use to make use of transitivity and the fact the n9 list is ordered. Rather than comparing all values for every iteration as described above, 
+we instead compare all values from a given starting point until difference is > the maximum of the deltas from the previous step (aka. the potential b-a values). 
 
-sts x:xs = sts ((x:xs, [])) : sts (xs, [])
-0. Patten match on the non-empty list x: xs = input
-1. 
+E.g. Given the list of values l, ([a,b,...n]) and a maximum delta m, we can say that for each i,j in l: 
 
- x - (head xs) in deltas -> (_ :xs') = xs 
-        acc : x : (sts xs')
-2.  x - (head xs) > max deltas -> (_ :xs') = xs 
-        acc 
-3.  (x, []) = acc
+1. if i - j > m: then all to the right of than j are also > than m. 
+2. if i - j is in deltas, i, j are potential values for s,t. 
+
+Therefore we can build an algorithm which stats at i and finds all potential pairs of i until the gap reaches m, at this point more onto the next value in l 
+and reapeat, finally once we reach the end of l, return the accumulator.
+
+The algorithm is implemented as follows: 
+
+0. Build find the potential pairs for all all left -> right slices of the input list, passing in the slice as `x` and the [(0,0)] as the empty accumulator.
+    0.a `slice` is based on the python slice opperator taking a start:end indexes of a list and returning a new list to from these position. 
+    In this implemetion just a `from` index is needed as we are always slicing to the end of the input. 
+    e.g. slice 1 [0..2] would return [1,2]
+1. Pattern match an empty list as xs and return the accumulator
+2. Pattern match delta in deltas - add the two numbers being compared to acc, and recurse on the next position in l. 
+3. Patten match delta > m - In this case we know through transitivity that delta the rest of the tail, so return the accumulator (meaning the next slice from 0 will be passed in)
+4. Patten match delta < m - Continue recursion from the current value of x, but don't add anything to the accumulator as it isn't a match.
+5. Finally convert all non (0,0) items of the accumulator to Pairs and return.
+
+
+Whilst is approach is more efficient the alternative non transitive algorithm, it does come at a slight trade off in terms of the elegance of the code. 
+For example, it would have been possible to implement this using a fold method if didn't care about exhausting all checks in the input on each recursion.
+Further, as the recursive function 
+
+
 
 \begin{code}
 --sts:: [(Pair, Pair)]
 sts:: [[(Int, Int)]]
-sts = [d x [(0,0)] | x <- [slice s xs | s <- [0..length xs -1]]] 
+sts = [d x [(0,0)] | x <- [slice s xs | s <- [0..length xs -1]]] -- 0
     where xs = n9
-          slice from xs = take (length xs - from) (drop from xs)
-          p a = (a, Roman (convertToNumeral a))
-          
+          slice from xs = take (length xs - from) (drop from xs) --0.a
         
 d :: [Int] -> [(Int, Int)] -> [(Int, Int)]
---d :: [Int] -> [Int]-> [Int]
 d (x:xs) acc
-    | null xs  = acc
-    | delta `elem` deltas = d (x : tail xs) ((x, head xs): acc) ++ d xs acc
---                            f (x:xs) = f x : map f xs 
-    | delta > m = acc 
-    | delta < m = d (x : tail xs) acc 
+    | null xs  = acc  --1 
+    | delta `elem` deltas = d (x : tail xs) ((x, head xs): acc)  --2
+    | delta > m = acc  -- 3
+    | delta < m = d (x : tail xs) acc -- 4
     where delta =  abs (x - head xs)
           deltas = nub [abs (fst (fst x) - fst (snd x)) | x <- candidatePairs' n2]
           m = maximum deltas
 
 
-ble :: [Int] -> [(Int, Int)] -> [(Int, Int)]
-ble (x:xs) acc 
-    | null xs = [(x, head xs)]
-    | otherwise = [(1,2)]
-
+toPair :: Int -> Pair
+toPair x = (x, Roman (convertToNumeral x))
 
 \end{code}
 
