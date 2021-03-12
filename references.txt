@@ -5,3 +5,4 @@ https://wiki.haskell.org/index.php?title=Prime_numbers&oldid=36858#Postponed_Fil
 http://learnyouahaskell.com/making-our-own-types-and-typeclasses#type-synonyms
 http://learnyouahaskell.com/modules#data-list
 https://stackoverflow.com/questions/33394756/haskell-function-length-doesnt-work-with-custom-data-type
+https://hackage.haskell.org/package/base-4.14.1.0/docs/Data-List.html#v:nub

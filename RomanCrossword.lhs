@@ -1,6 +1,7 @@
 \begin{code}
 import Data.List
 import Data.Function
+--import qualified Data.Set as Set  
 \end{code}
 
 ghci RomanCrossword.lhs
@@ -135,13 +136,17 @@ https://www.cs.hmc.edu/~oneill/papers/Sieve-JFP.pdf
 https://wiki.haskell.org/index.php?title=Prime_numbers&oldid=36858#Postponed_Filters_Sieve
 
 \begin{code}
-data Roman = Roman String deriving (Show)
+data Roman = Roman String deriving (Show, Eq, Ord)
 type Pair = (Int, Roman) -- TODO: make work with Integer as per spec!
 
 boundedPrimes :: [Pair]
 boundedPrimes = [(x, Roman (convertToNumeral x)) | x <- [2..upperBound], isprime x]
 
 \end{code}
+
+The `Roman` type has been made to derive Show, Eq, and Ord. This is to enable ease
+of comparison later to solve the equations. As a Pair is constructed of a tuple (Int, Roman)
+an element wise comparison will be used, meaning that a simple a > b for any pair (a, b) Pairs is possible.
 
 4. Numeral Length
 
@@ -268,6 +273,7 @@ p2 = [(2,Roman "II"),(11,Roman "XI"),(101,Roman "CI")]
 \begin{code}
 enum = zip [0..] n2
 ab = [(snd x, convertToNumeral (snd x), snd (enum !! i), convertToNumeral (snd (enum !! i))) | x <- enum, i <- [0..(length enum -1)], fst x /= i]
+
 \end{code}
 
 The algorithm makes use of the `zip` function with `n2` from step 4 produce a numbering of the items in 
@@ -294,11 +300,82 @@ candidatePairs (x:xs) = [(snd x, convertToNumeral (snd x), snd (enum !! i), conv
     where enum = zip [0..] (x:xs)
 \end{code}
 
+This implemention works insofar as it returns the correct candidate pairs for a given n value, but it could be improved as currently it returns all candidates as a list 
+of quads (Int, String, Int, String). 
+
+E.g. `candidatePairs n2` returns the following List. 
+[(2,"II",11,"XI"),(2,"II",101,"CI"),(11,"XI",2,"II"),(11,"XI",101,"CI"),(101,"CI",2,"II"),(101,"CI",11,"XI")]
+
+Whilst this is fine to read in the display, it is limited promatically as built in tuple functions such as `fst`, `snd` have no meaning here.
+
+The below refactoring returns a tuple of Pairs for each candidate pair to overcome this.
+
+\begin{code}
+candidatePairs' :: [Int] -> [(Pair, Pair)]
+candidatePairs' [] = []
+candidatePairs' (x:xs) = [(toPair x, toPair (enum !! i)) | x <- enum, i <- [0..(length enum -1)], fst x /= i]
+    where enum = zip [0..] (x:xs)
+          toPair z = (snd z, Roman (convertToNumeral (snd z)))
+\end{code}
+
+E.g. `candidatePairs' n2` returns the following List of tuples of Pairs: 
+[((2,Roman "II"),(11,Roman "XI")),((2,Roman "II"), ...]
+
 6. s,t possible values
 
-One way to approach solving this is to iterate the possible values of b -a from step 5, and then compare the difference to the deltas of n9. 
+One way to approach solving this is to iterate the possible values of b -a from step 5, and then compare the difference to all possible of deltas of n9. 
 For example, the first two positions of `n9` are [283,337], assuming t > 3, the difference is 54, meaning that is there is an a-b combination = 54 
 this combination would satify the equation.
+
+We can use the candidatePairs' function to find all candidate of length two are then calculate the difference between each candidate: 
+
+[(fst (fst x) - fst (snd x)) | x <- candidatePairs' n2]
+
+This yields the list: `[-9,-99,9,-90,99,90]`. We can now use this list to search for the n9 space, as if any of these distances are found a potential solution 
+for the equation has been found. An optimisation is possible here as for a given pair from n9, (x, y) and a distance d from these deltas, if y -x = d, then x-y = -d, 
+therefore we can eleminate the negative numbers from deltas and just use the absolute values of the distances to reduce the search space. This can be done by converting 
+the list of absolute distance to a set (o(n log n)) using `Set.fromList` from Data.Set, however as sets are not really purpose built for iterating over, it makes more 
+sense to keep the data as a List and make use of the symetry that we know exists. This can be achieved with the `nub` function from `Data.List` 
+(https://hackage.haskell.org/package/base-4.14.1.0/docs/Data-List.html#v:nub).
+
+As a reminder, the approach to solving this is to calculate all possible deltas from n9 and find those which are equal to any of the deltas from n2. The issue 
+with this is that it is clearly an inefficient approach as for every i in n9, the difference has to be calculated against every other i' o(n**2), and then compared 
+against the target deltas of n2. 
+
+A better approach is to use dynamic programming here...
+
+sts x:xs = sts ((x:xs, [])) : sts (xs, [])
+0. Patten match on the non-empty list x: xs = input
+1. 
+
+ x - (head xs) in deltas -> (_ :xs') = xs 
+        acc : x : (sts xs')
+2.  x - (head xs) > max deltas -> (_ :xs') = xs 
+        acc 
+3.  (x, []) = acc
+
+\begin{code}
+--sts:: [(Pair, Pair)]
+sts:: [[Int]]
+sts = [d x [] | x <- [slice s xs | s <- [0..length xs -1]]]
+    where xs = n9
+          slice from xs = take (length xs - from) (drop from xs)
+
+-- d :: [Int] -> [(Pair, Pair)] -> [(Pair, Pair)]
+d :: [Int] -> [Int] -> [Int]
+d (x:xs) acc
+    | null xs  = acc
+    | delta `elem` deltas = d (x : tail xs) (x : head xs: acc) ++ d xs acc
+--                            f (x:xs) = f x : map f xs 
+    | delta > m = acc 
+    | delta < m = d (x : tail xs) acc 
+    where delta =  abs (x - head xs)
+          deltas = nub [abs (fst (fst x) - fst (snd x)) | x <- candidatePairs' n2]
+          --deltas = [1]
+          m = maximum deltas
+
+
+\end{code}
 
 
 
