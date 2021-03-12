@@ -356,23 +356,30 @@ sts x:xs = sts ((x:xs, [])) : sts (xs, [])
 
 \begin{code}
 --sts:: [(Pair, Pair)]
-sts:: [[Int]]
-sts = [d x [] | x <- [slice s xs | s <- [0..length xs -1]]]
+sts:: [[(Int, Int)]]
+sts = [d x [(0,0)] | x <- [slice s xs | s <- [0..length xs -1]]] 
     where xs = n9
           slice from xs = take (length xs - from) (drop from xs)
-
--- d :: [Int] -> [(Pair, Pair)] -> [(Pair, Pair)]
-d :: [Int] -> [Int] -> [Int]
+          p a = (a, Roman (convertToNumeral a))
+          
+        
+d :: [Int] -> [(Int, Int)] -> [(Int, Int)]
+--d :: [Int] -> [Int]-> [Int]
 d (x:xs) acc
     | null xs  = acc
-    | delta `elem` deltas = d (x : tail xs) (x : head xs: acc) ++ d xs acc
+    | delta `elem` deltas = d (x : tail xs) ((x, head xs): acc) ++ d xs acc
 --                            f (x:xs) = f x : map f xs 
     | delta > m = acc 
     | delta < m = d (x : tail xs) acc 
     where delta =  abs (x - head xs)
           deltas = nub [abs (fst (fst x) - fst (snd x)) | x <- candidatePairs' n2]
-          --deltas = [1]
           m = maximum deltas
+
+
+ble :: [Int] -> [(Int, Int)] -> [(Int, Int)]
+ble (x:xs) acc 
+    | null xs = [(x, head xs)]
+    | otherwise = [(1,2)]
 
 
 \end{code}
