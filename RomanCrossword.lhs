@@ -363,35 +363,42 @@ The algorithm is implemented as follows:
 2. Pattern match delta in deltas - add the two numbers being compared to acc, and recurse on the next position in l. 
 3. Patten match delta > m - In this case we know through transitivity that delta the rest of the tail, so return the accumulator (meaning the next slice from 0 will be passed in)
 4. Patten match delta < m - Continue recursion from the current value of x, but don't add anything to the accumulator as it isn't a match.
-5. Finally convert all non (0,0) items of the accumulator to Pairs and return.
+5. Finally convert all non (0,0) items from the accumulator and return whats left.
+    5.a. Removing all non zero Pairs leaves empty lists in their place, for neatness we should tidy these up. 
+    5.b We've been working with [[Pair]] so far so convenience of map, filter etc. we now just need to convert what's left into [(Pair, Pair)]
 
 
 Whilst is approach is more efficient the alternative non transitive algorithm, it does come at a slight trade off in terms of the elegance of the code. 
 For example, it would have been possible to implement this using a fold method if didn't care about exhausting all checks in the input on each recursion.
-Further, as the recursive function 
-
+Further, as the recursive function takes a accumulator we need to first call it with an accumulator, there is no concept of an empty Pair, so the best we can 
+manage is to pass in the value 0 to `toPair`(e.g. (0,Roman "")) and then filter these values from the output.
 
 
 \begin{code}
---sts:: [(Pair, Pair)]
-sts:: [[(Int, Int)]]
-sts = [d x [(0,0)] | x <- [slice s xs | s <- [0..length xs -1]]] -- 0
+sts:: [(Pair, Pair)]
+sts = map toTup res
     where xs = n9
+          res = filter (notEmptyList) (notZero (concat [d x [[toPair 0, toPair 0]] | x <- [slice s xs | s <- [0..length xs -1]]])) -- 0
           slice from xs = take (length xs - from) (drop from xs) --0.a
+          zero = toPair 0
+          notZero a = map (\x -> f (x)) a where f = filter ( > zero) --5
+          notEmptyList a = (not . null) a  -- 5.a
+          toTup [x, y]  = (x, y)      -- 5.b
+          
         
-d :: [Int] -> [(Int, Int)] -> [(Int, Int)]
+d :: [Int] -> [[Pair]] -> [[Pair]]
 d (x:xs) acc
     | null xs  = acc  --1 
-    | delta `elem` deltas = d (x : tail xs) ((x, head xs): acc)  --2
+    | delta `elem` deltas = d (x : tail xs) ([toPair x, toPair (head xs)]: acc)  --2
     | delta > m = acc  -- 3
     | delta < m = d (x : tail xs) acc -- 4
     where delta =  abs (x - head xs)
           deltas = nub [abs (fst (fst x) - fst (snd x)) | x <- candidatePairs' n2]
           m = maximum deltas
 
-
 toPair :: Int -> Pair
 toPair x = (x, Roman (convertToNumeral x))
+
 
 \end{code}
 
