@@ -82,18 +82,35 @@ convertPostion y
 
 2. Upperbound
 
-To find the upperbound a simple bruteforce approach was used. 
-The lower bound for the search is  1000 as this is the first ocurence of "M". We also know that the 
-upper bound for search is 1899, as 1900 is "MDM" and so doesn't satify the condition of only one ocurence of "M".
-We can also deduce that largest number will contain one "M" and one "D", as there can only be one "D" in the numeral before 
-moving into the next 1000 range.
+Axioms: 
+
+1. 2* D, 1* M in grid
+2. Appearing in three entries, meaning that each appear seperately from each other
+3. All entries are > three characters
+
+The upper bound can be deduced logically by first working out the lowest and highest possible values in a searchspace if we were going to use a brute force approach. 
+We know that the upper bound must contain an M, so the lower bound is at least > 1000. Conversly, we know from axiom 2 that the three character are split other seperate entries, 
+meaning that an "MD" combination is not possible. Therefore we know that the upperbound must be less than 1400 as this is where MD pairing first appear. Therefore the upper bound is the 
+highest entry > three characters between 1000..1399. This actually turns out to be the maximum of this range, 1399, "MCCCXCIX". 
 
 \begin{code}
-upperBound = fst (last [(x, numeral) | x <- [500..1899], let numeral = convertToNumeral x, 'M' `elem` numeral  && 'D' `elem` numeral])
+
+upperBound = fst (last  [(x,  numeral) | x <- [1000..1399], let numeral = convertToNumeral x, length numeral > 3 && 'M' `elem` numeral  && not ('D' `elem` numeral )])
+
+-- We can make this a lot more efficient by starting at the upperlimit for the upper bound and working backwards and 
+
+upperBound' :: (Int, String)
+upperBound' = f 1399
+
+f :: Int -> (Int, String)
+f x
+    | predicates = (x, numeral)
+    | otherwise = f (x - 1)
+    where numeral = convertToNumeral x
+          predicates = (length numeral > 3 && 'M' `elem` numeral  && not ('D' `elem` numeral ))
+
 \end{code}
 
-Running this, we see that 1899 is infact the larget number as it contains both 'M' and 'D' symbols ("MDCCCXCIX").
-N.b. could make this better by checking that M occurs only once.
 
 
 3. Bounded Primes
@@ -105,7 +122,7 @@ be removed ('sieved') out of the search space for possible primes, as it is know
 divisable by the at least the identified prime. 
 
 Turner's implemention has been shown to be suboptimal asymtopically (https://www.cs.hmc.edu/~oneill/papers/Sieve-JFP.pdf).
-Indeed, O'Neill (2009), brands the implemention as the 'unfaithful Sieve' arguing it is not an accurate 
+O'Neill (2009), brands the implemention as the 'unfaithful Sieve' arguing it is not an accurate 
 translation of the Seive as described by Eratosthenes (due to how the non-primes are elimated immediately after primes are found, 
 rather than lazily and starting from the primes' square and working back towards the prime (O'Neill (2009))). 
 
@@ -278,11 +295,13 @@ ab = [(snd x, convertToNumeral (snd x), snd (enum !! i), convertToNumeral (snd (
 
 The algorithm makes use of the `zip` function with `n2` from step 4 produce a numbering of the items in 
 `n2`. This approach was based on the `enumerate` concept in python, in which an iterable, x can be enumerated 
-to yield each item and and index for every index in the length of x. 
+to yield each item and an index for item in x. 
 
 E.g.
 
-`enum = zip [0..] n2` yields the following list of tuples: `[(0,2),(1,11),(2,101)]`, where the first index is the ith position of `[0..]`
+`enum = zip [0..] n2` 
+
+yields the following list of tuples: `[(0,2),(1,11),(2,101)]`, where the first entry is the ith position of `[0..]`
 
 We then can iterate enum (as 'x'), and a range up to the length of enum-1 (as 'i'). The predicate `fst x /= i`
 is used to guard against adding combinations of the same item, when collecting tuples of `snd x, snd (enum !! i)`
@@ -399,9 +418,19 @@ d (x:xs) acc
 toPair :: Int -> Pair
 toPair x = (x, Roman (convertToNumeral x))
 
-
 \end{code}
 
 
+PART 2
+
+- Minimum value for t (q.6 -sts !! 0 )
+- Find minimum values for c (3 chars), n  (6) - these give a lower bound for d. 
+- what possible values for d (4 chars) > the lower bound?
 
 
+\begin{code}
+-- ds :: [Int]
+--ds = filter (> cs) p4
+--    where cs = sort p3 !! 0
+--          ns = sort p6 !! 0
+\end{code}
