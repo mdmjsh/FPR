@@ -4,7 +4,15 @@ import Data.Function
 --import qualified Data.Set as Set  
 \end{code}
 
-ghci RomanCrossword.lhs
+Layout helper
+
+\begin{code}
+layout :: Show a => [a] -> IO ()
+layout = putStr . unlines . map show
+
+ls =  (layout . convertToNumeral) 
+
+\end{code}
 
 PART 0
 
@@ -457,7 +465,7 @@ manage is to pass in the value 0 to `toPair`(e.g. (0,Roman "")) and then filter 
 sts:: [(Pair, Pair)]
 sts = map toTup res
     where xs = n9
-          res = filter (notEmptyList) (notZero (concat [d x [[toPair 0, toPair 0]] | x <- [slice s xs | s <- [0..length xs -1]]])) -- 0
+          res = filter (notEmptyList) (notZero (concat [d x [[zero, zero]] | x <- [slice s xs | s <- [0..length xs -1]]])) -- 0
           slice from xs = take (length xs - from) (drop from xs) --0.a
           zero = toPair 0
           notZero a = map (\x -> f (x)) a where f = filter ( > zero) --5
@@ -530,7 +538,7 @@ n * m inputs list (n3, n6) are much smaller so in this case simplicity can be fa
 
 
 \begin{code}
-dtcns::[(Int, Int,Int, Int)]
+dtcns :: [(Int, Int,Int, Int)]
 dtcns = [(t+c+n, t,c,n) | c <- n3, n <- n6, let cn = c+n, let t = (fst (fst (sts !! 0))),  cn `elem` [d - t * 5 | d <- ds]]
 \end{code}
 
@@ -540,4 +548,55 @@ then the value of t+c+n is a potential solution for d.
 ghci> dtcns
 [(379,283,7,89),(469,283,7,179),(469,283,19,167),(379,283,59,37),(469,283,59,127)]
 
+9. s, t values 
+
+So we know now that t = 283, and therefore s must equal the corresponding tuple from sts. 
+
+\begin{code}
+s,t :: Int
+s = (fst . snd ) (sts !! 0)
+t = (fst . fst ) (sts !! 0)
+sr, tr::Roman 
+sr = (Roman . convertToNumeral)  s
+tr = (Roman . convertToNumeral) t
+\end{code}
+
+ghci> s
+373
+ghci> sr
+Roman "CCCLXXIII"
+ghci> t
+283
+ghci> tr
+Roman "CCLXXXIII"
+
+
+10. sts'
+
+As we know that 20d has to be a two character numeral we know that 20a has to start with a 'C'. Therefore 
+any non 'C' prefix-numerals can be ruled out of consideration of sts. 
+
+\begin{code}
+
+
+type R = String 
+roman :: Int -> R
+roman a = convertToNumeral a
+
+sts'' :: [(Pair, Pair)]
+sts'' = map toTup res
+    where xs = n9
+          res = filter (notEmptyList) (notZero (concat [d x [[zero, zero]] | x <- [slice s xs | s <- [0..length xs -1]]])) -- 0
+          slice from xs = take (length xs - from) (drop from xs) --0.a
+          zero = toPair 0
+          notZero a = map (\x -> f (x)) a where f = filter ( > zero) --5
+          notEmptyList a = (not . null) a  -- 5.a
+          toTup [x, y]  = (x, y)      -- 5.b
+
+
+--sts' :: [(Pair, Pair)]
+--sts' = filter ( ) sts 
+
+
+\end{code}
 
