@@ -86,32 +86,92 @@ Axioms:
 
 1. 2* D, 1* M in grid
 2. Appearing in three entries, meaning that each appear seperately from each other
-3. All entries are > three characters
+3. All entries are > three characters long
 
 The upper bound can be deduced logically by first working out the lowest and highest possible values in a searchspace if we were going to use a brute force approach. 
-We know that the upper bound must contain an M, so the lower bound is at least > 1000. Conversly, we know from axiom 2 that the three character are split other seperate entries, 
+We know that the upper bound must contain an M, so the lower bound is at least > 1000. Conversly, we know from axiom 2 that the three characters are split over seperate entries, 
 meaning that an "MD" combination is not possible. Therefore we know that the upperbound must be less than 1400 as this is where MD pairing first appear. Therefore the upper bound is the 
 highest entry > three characters between 1000..1399. This actually turns out to be the maximum of this range, 1399, "MCCCXCIX". 
 
 \begin{code}
 
-upperBound = fst (last  [(x,  numeral) | x <- [1000..1399], let numeral = convertToNumeral x, length numeral > 3 && 'M' `elem` numeral  && not ('D' `elem` numeral )])
+upperBound = fst (last  [(x,  numeral) | x <- [1000..1399], let numeral = convertToNumeral x, isPrime x && length numeral > 3 && 'M' `elem` numeral  && not ('D' `elem` numeral )])
 
--- We can make this a lot more efficient by starting at the upperlimit for the upper bound and working backwards and 
+\end{code}
 
-upperBound' :: (Int, String)
+We can make this a lot more efficient by starting at the upper limit for the upper bound and working backwards if all axiom predicates are not met: 
+
+\begin{code}
+upperBound' :: Int
 upperBound' = f 1399
 
-f :: Int -> (Int, String)
+f :: Int -> Int
 f x
-    | predicates = (x, numeral)
+    | predicates = x
     | otherwise = f (x - 1)
     where numeral = convertToNumeral x
-          predicates = (length numeral > 3 && 'M' `elem` numeral  && not ('D' `elem` numeral ))
+          predicates = (isPrime x && length numeral > 3 && 'M' `elem` numeral  && not ('D' `elem` numeral ))
+
+\end{code}
+
+Note, this above implemention works before we've already deduced that the upper limit for the upper bound is 1399, therefore the algorithm is relying on the hard coded 
+`upperBound' = f 1399`. For example if we change this line to `upperBound' = f 3999` the algorithm would fail as it fails to take into account only axiom 2, i.e. multiple 'M' are 
+not explictly disallowed. If we wanted to abstract away some of the brain work and make this an entirely bruteforce approach that didn't rely on the inital hardcoded upper limit we 
+would have to check only instance of the letter occurs in the match. 
+
+\begin{code}
+upperBound'' :: Int
+upperBound'' = f' 3999
+
+f' :: Int -> Int
+f' x
+    | predicates = x
+    | otherwise = f' (x - 1)
+    where numeral = convertToNumeral x
+          predicates = (isPrime x && length numeral > 3 && dm )
+          dm = length (filter (`elem` ['D', 'M']) numeral ) == 1
 
 \end{code}
 
 
+This implemention confirms that our inital non bruteforce approachs were indeed correct:
+
+ghci> upperBound
+1399
+(0.02 secs, 8,241,440 bytes)
+ghci> upperBound'
+1399
+(0.00 secs, 138,328 bytes)
+ghci> upperBound''
+1399
+(0.05 secs, 54,489,448 bytes)
+
+N.b. see below for details for the `isPrime` function used here.
+
+Initially it looked at this point that the solution had been found, however upon reaching q.6
+I was forced to question the assumptions made of the upper bound, at which point the realisation was made that 
+axiom two was incorrect as the entries could be overlapping in the grid. With this in mind, we can adjust the algorithm 
+to simple find the largest three character prime containing only one 'M'.  
+
+\begin{code}
+upperBound''' :: Int
+upperBound''' = f'' 3999
+
+f'' :: Int -> Int
+f'' x
+    | predicates = x
+    | otherwise = f'' (x - 1)
+    where numeral = convertToNumeral x
+          predicates = (isPrime x && length numeral > 3 && dm )
+          dm = length (filter (`elem` ['M']) numeral ) == 1
+
+\end{code}
+
+
+Which yields:
+
+ghci> upperBound'''
+1889
 
 3. Bounded Primes
 
@@ -129,8 +189,8 @@ rather than lazily and starting from the primes' square and working back towards
 O'Neill instead presents the 'genuine Seive of Eratosthenes' as follows, (n.b. this is slightly altered to handle x <= 1):
 
 \begin{code}
-primes = 2 : [x | x <- [3..], isprime x]
-isprime x 
+primes = 2 : [x | x <- [3..], isPrime x]
+isPrime x 
     | x <= 1 = False
     | otherwise = all (\p -> x `mod` p > 0) (factorsToTry x)
     where factorsToTry x = takeWhile (\p -> p*p <= x) primes
@@ -138,8 +198,8 @@ isprime x
 
 algorithm works as follows:
 
-primes := the list of all numbers which satify the predicate `isprime`
-isprime:= Uses `all` and a lambda function to check that all values `p` of the iterable `factorsToTry` modulo x are greater 1.
+primes := the list of all numbers which satify the predicate `isPrime`
+isPrime:= Uses `all` and a lambda function to check that all values `p` of the iterable `factorsToTry` modulo x are greater 1.
 factorsToTry:= uses a takewhile loop to iterate all ps in primes that are <= x, starting from p squared.
 E.g. factorsToTry 17 is equal to [2,3]. 
 
@@ -157,7 +217,7 @@ data Roman = Roman String deriving (Show, Eq, Ord)
 type Pair = (Int, Roman) -- TODO: make work with Integer as per spec!
 
 boundedPrimes :: [Pair]
-boundedPrimes = [(x, Roman (convertToNumeral x)) | x <- [2..upperBound], isprime x]
+boundedPrimes = [(x, Roman (convertToNumeral x)) | x <- [2..upperBound'''], isPrime x]
 
 \end{code}
 
@@ -198,12 +258,14 @@ p9' = numeralsOfLength 9
 integerOfNumeralLength :: Int -> [Int]
 integerOfNumeralLength x = [fst x | x <- numeralsOfLength x]
 
-numerals = take 3999 [numeral | x <- [1..], let numeral = convertToNumeral x]
+-- not used but here's a list of all possible numerals
+numerals = take upperBound [numeral | x <- [1..], let numeral = convertToNumeral x] 
+
 numeralsOfLength :: Int -> [Pair]
 numeralsOfLength x 
     | x == 0 = []
     | x > 3999 = []
-    | otherwise = [(i, Roman numeral) | i <- [1..upperBound], let numeral = convertToNumeral i, length numeral == x && isprime i]
+    | otherwise = [(i, Roman numeral) | i <- [1..upperBound], let numeral = convertToNumeral i, length numeral == x && isPrime i]
 \end{code}
 
 
@@ -217,9 +279,8 @@ This can be refactored using sortBy, GroupBy and on as follows:
 numeralsOfLength' :: Int -> [(Int, String)]
 numeralsOfLength' x = pairs !! (x -1)
     where pairs = groupBy ((==) `on` (length . snd)) (sortBy (compare`on` (length . snd)) nums)
-          nums = [(i, numeral) | i <- [1..upperBound], let numeral = convertToNumeral i, isprime i]
+          nums = [(i, numeral) | i <- [1..upperBound], let numeral = convertToNumeral i, isPrime i]
 \end{code}
-
 
 This is an improvement as we now group all numerals together and then just return the x-1 position (because of zero indexing)
 for a given x, rather than exhaustively checking up to upperbound for any x, but currently it an [(Int, String) ] not a [Pair].
@@ -229,8 +290,8 @@ A further refactor is required to make this return a Pair:
 \begin{code}
 numeralsOfLength'' :: Int -> [Pair]
 numeralsOfLength'' x = pairs !! (x -1)
-    where pairs = groupBy ((==) `on` (length' . snd)) (sortBy (compare`on` (length' . snd)) boundedPrimes)
---          length' = (\_ x -> length x)
+    where pairs = groupBy ((==) `on` l) (sortBy (compare `on` l) boundedPrimes)
+          l = (length' . snd)
 
 length' :: Roman -> Int
 length' (Roman x) = length x
@@ -290,7 +351,6 @@ p2 = [(2,Roman "II"),(11,Roman "XI"),(101,Roman "CI")]
 \begin{code}
 enum = zip [0..] n2
 ab = [(snd x, convertToNumeral (snd x), snd (enum !! i), convertToNumeral (snd (enum !! i))) | x <- enum, i <- [0..(length enum -1)], fst x /= i]
-
 \end{code}
 
 The algorithm makes use of the `zip` function with `n2` from step 4 produce a numbering of the items in 
@@ -415,7 +475,7 @@ d (x:xs) acc
           deltas = nub [abs (fst (fst x) - fst (snd x)) | x <- candidatePairs' n2]
           m = maximum deltas
 
-toPair :: Int -> Pair
+toPair :: Int -> Pair 
 toPair x = (x, Roman (convertToNumeral x))
 
 \end{code}
@@ -423,14 +483,61 @@ toPair x = (x, Roman (convertToNumeral x))
 
 PART 2
 
+7. 
+
+d == Vt + c + n
+d -c -n == Vt
+
 - Minimum value for t (q.6 -sts !! 0 )
 - Find minimum values for c (3 chars), n  (6) - these give a lower bound for d. 
 - what possible values for d (4 chars) > the lower bound?
 
+\begin{code}
+ds :: [Int]
+ds = filter (>= g) (map (fst) p4)
+    where lc = (n3 !! 0)
+          ln = (n6 !! 0)
+          vt = fst (fst (sts !! 0)) * 5
+          g = vt + lc + ln 
+\end{code}
+
+8. Possible values for dtns 
+
+We can deduce from step 5 that the value for t must be the lowest value of sts any 5 * any other leaves no values for d within the upper limit when adding the 
+lowest possible values for c,n. We can confirm this by altering the fuction above to use the next possible t in the sequence: 
 
 \begin{code}
--- ds :: [Int]
---ds = filter (> cs) p4
---    where cs = sort p3 !! 0
---          ns = sort p6 !! 0
+ds' :: [Int]
+ds' = filter (>= g) (map (fst) p4)
+    where lc = (n3 !! 0)
+          ln = (n6 !! 0)
+          vt = fst (snd (sts !! 0)) * 5
+          g = vt + lc + ln 
 \end{code}
+ 
+ghci> ds'
+[]
+
+Therefore we can plug the value for t into the equation. We can simplify the right hand side of the equation and to find possible values for c,n:
+
+d - Vt = c + n 
+
+1. Iterate the possible values for d. 
+2. Iterate possible iterate value of c + n to find those which = d - vt. 
+
+Note, a optimisation making use of transitivity is possible in a similar manner to question 6, but in this case the simple solution has been favoured as the 
+n * m inputs list (n3, n6) are much smaller so in this case simplicity can be favoured over optimisation.
+
+
+\begin{code}
+dtcns::[(Int, Int,Int, Int)]
+dtcns = [(t+c+n, t,c,n) | c <- n3, n <- n6, let cn = c+n, let t = (fst (fst (sts !! 0))),  cn `elem` [d - t * 5 | d <- ds]]
+\end{code}
+
+In the above list comprehension, the second nest list comprehension of all values of ds - Vt is created, then for possible all values v of c+n, if v is in that list 
+then the value of t+c+n is a potential solution for d.
+
+ghci> dtcns
+[(379,283,7,89),(469,283,7,179),(469,283,19,167),(379,283,59,37),(469,283,59,127)]
+
+
