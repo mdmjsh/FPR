@@ -1,7 +1,7 @@
 \begin{code}
 import Data.List
 import Data.Function
---import qualified Data.Set as Set  
+
 \end{code}
 
 Layout helper
@@ -221,11 +221,14 @@ https://www.cs.hmc.edu/~oneill/papers/Sieve-JFP.pdf
 https://wiki.haskell.org/index.php?title=Prime_numbers&oldid=36858#Postponed_Filters_Sieve
 
 \begin{code}
-data Roman = Roman String deriving (Show, Eq, Ord)
-type Pair = (Int, Roman) -- TODO: make work with Integer as per spec!
+type Roman = String 
+roman :: Int -> Roman
+roman a = convertToNumeral a
+
+type Pair = (Int, Roman)
 
 boundedPrimes :: [Pair]
-boundedPrimes = [(x, Roman (convertToNumeral x)) | x <- [2..upperBound'''], isPrime x]
+boundedPrimes = [(x, roman x) | x <- [2..upperBound'''], isPrime x]
 
 \end{code}
 
@@ -273,7 +276,7 @@ numeralsOfLength :: Int -> [Pair]
 numeralsOfLength x 
     | x == 0 = []
     | x > 3999 = []
-    | otherwise = [(i, Roman numeral) | i <- [1..upperBound], let numeral = convertToNumeral i, length numeral == x && isPrime i]
+    | otherwise = [(i, numeral) | i <- [1..upperBound], let numeral = convertToNumeral i, length numeral == x && isPrime i]
 \end{code}
 
 
@@ -299,17 +302,9 @@ A further refactor is required to make this return a Pair:
 numeralsOfLength'' :: Int -> [Pair]
 numeralsOfLength'' x = pairs !! (x -1)
     where pairs = groupBy ((==) `on` l) (sortBy (compare `on` l) boundedPrimes)
-          l = (length' . snd)
+          l = (length . snd)
 
-length' :: Roman -> Int
-length' (Roman x) = length x
 \end{code}
-
-Note, we have to implement a custom length' function to work  on numerals, this  is because the type signature 
-for the inbuilt length is `length :: Foldable t => t a -> Int`. As the Roman type is not 
-a foldable, we need handle only running length on the numeral String of the Roman, not the Roman itself. Attempting to do so results in: 
-` Couldn't match expected type ‘[a0]’ with actual type ‘Roman’` 
-https://stackoverflow.com/questions/33394756/haskell-function-length-doesnt-work-with-custom-data-type
 
 There is a further improvement here to reuse `boundedPrimes` rather than calculate the prime pairs on the fly.
 
@@ -354,7 +349,7 @@ PART 1
 Given we know that a, b are two character primes we need to find all the possible permutations of the 
 two character primes. 
 
-p2 = [(2,Roman "II"),(11,Roman "XI"),(101,Roman "CI")]
+p2 = [(2, "II"),(11, "XI"),(101, "CI")]
 
 \begin{code}
 enum = zip [0..] n2
@@ -402,11 +397,11 @@ candidatePairs' :: [Int] -> [(Pair, Pair)]
 candidatePairs' [] = []
 candidatePairs' (x:xs) = [(toPair x, toPair (enum !! i)) | x <- enum, i <- [0..(length enum -1)], fst x /= i]
     where enum = zip [0..] (x:xs)
-          toPair z = (snd z, Roman (convertToNumeral (snd z)))
+          toPair z = (snd z, roman (snd z))
 \end{code}
 
 E.g. `candidatePairs' n2` returns the following List of tuples of Pairs: 
-[((2,Roman "II"),(11,Roman "XI")),((2,Roman "II"), ...]
+[((2, "II"),(11, "XI")),((2, "II"), ...]
 
 6. s,t possible values
 
@@ -458,7 +453,7 @@ The algorithm is implemented as follows:
 Whilst is approach is more efficient the alternative non transitive algorithm, it does come at a slight trade off in terms of the elegance of the code. 
 For example, it would have been possible to implement this using a fold method if didn't care about exhausting all checks in the input on each recursion.
 Further, as the recursive function takes a accumulator we need to first call it with an accumulator, there is no concept of an empty Pair, so the best we can 
-manage is to pass in the value 0 to `toPair`(e.g. (0,Roman "")) and then filter these values from the output.
+manage is to pass in the value 0 to `toPair`(e.g. (0, "")) and then filter these values from the output.
 
 
 \begin{code}
@@ -484,7 +479,7 @@ d (x:xs) acc
           m = maximum deltas
 
 toPair :: Int -> Pair 
-toPair x = (x, Roman (convertToNumeral x))
+toPair x = (x, roman x)
 
 \end{code}
 
@@ -556,47 +551,251 @@ So we know now that t = 283, and therefore s must equal the corresponding tuple 
 s,t :: Int
 s = (fst . snd ) (sts !! 0)
 t = (fst . fst ) (sts !! 0)
-sr, tr::Roman 
-sr = (Roman . convertToNumeral)  s
-tr = (Roman . convertToNumeral) t
+sr, tr:: Roman 
+sr = roman s
+tr = roman t
 \end{code}
 
 ghci> s
 373
 ghci> sr
-Roman "CCCLXXIII"
+"CCCLXXIII"
 ghci> t
 283
 ghci> tr
-Roman "CCLXXXIII"
+"CCLXXXIII"
 
 
 10. sts'
 
 As we know that 20d has to be a two character numeral we know that 20a has to start with a 'C'. Therefore 
-any non 'C' prefix-numerals can be ruled out of consideration of sts. 
+any non 'C' prefix-numerals can be ruled out of consideration of sts, we can therefore use the list existing sts 
+implemention as a list comprehension and rull out any entries whose numerals do not begin with a 'C'.
 
 \begin{code}
 
+sts' ::  [(Pair, Pair)]
+sts' = [x | x <- sts, (snd . fst) x !! 0 == 'C' || (snd . snd) x !! 0 == 'C' ]
 
-type R = String 
-roman :: Int -> R
-roman a = convertToNumeral a
+-- pattern matching, incomplete
+--zero = toPair 0
+--findCs :: [(Pair, Pair)] -> [(Pair, Pair)] -> [(Pair, Pair)]
+--findCs [(_, c:xs), y] acc = acc ++ (c:xs, y)
+--findCs [x, (_, c:ys)] acc = acc ++ (x, c:ys)
+--findCs [x, y] acc = acc
+--    where c = 'C'
+          
+\end{code}
 
-sts'' :: [(Pair, Pair)]
-sts'' = map toTup res
-    where xs = n9
-          res = filter (notEmptyList) (notZero (concat [d x [[zero, zero]] | x <- [slice s xs | s <- [0..length xs -1]]])) -- 0
-          slice from xs = take (length xs - from) (drop from xs) --0.a
-          zero = toPair 0
-          notZero a = map (\x -> f (x)) a where f = filter ( > zero) --5
-          notEmptyList a = (not . null) a  -- 5.a
-          toTup [x, y]  = (x, y)      -- 5.b
+sts'
+[((283,"CCLXXXIII"),(373,"CCCLXXIII"))]
 
+11. Pattern match
 
---sts' :: [(Pair, Pair)]
---sts' = filter ( ) sts 
+This generalisation can be achieved with a simple recursive function and pattern matching and an accumulating parameter, 
+which in this case is simply a Boolean value of the previous characters checked. The rules for which can be summised as:
+
+1. '.' is a wildcard - it matches any character
+2. if xi == yi for i in x,y those characters are a match
+3. match of [] [] returns the accumulator
+
+\begin{code}
+type Pattern = String
+
+match :: String -> String -> Bool
+match x y = match' x y True
+
+match' :: String -> String -> Bool -> Bool  
+match'(x:xs) ('.':ys) b  = match' xs ys b
+match'(x:xs) (y:ys) _  = match' xs ys (x == y)
+match' [] [] b = b
 
 
 \end{code}
+
+Some tests:
+
+ghci> match "xy" ".x"
+False
+ghci> match "xyz" "..x"
+False
+ghci> match "xyz" "..z"
+True
+ghci> match "xyz" "x.z"
+True
+ghci> match "xyz" ".yz"
+True
+ghci> match "xyz" ".y."
+True
+ghci> match "xyz" "..."
+True
+ghci> match "xyz" "x.."
+True
+ghci> match "CCLXXXIII" "C........"
+True
+ghci> match "CCLXXXIII" "C....D..."
+False
+
+Note, the accumulating parameter for match is started as True, this is because the all wildcard pattern should match any numeral of the same length.
+
+12. a, b values
+
+We know that t=283 and s=373 so we can start substituting in the values to the equation:
+
+s + b = t + a 
+= s - t + b = a 
+= 373 - 283 + b = a
+= 90 + b = a
+= 90 = a - b 
+
+\begin{code}
+a,b :: Int 
+(a, b) =  [(a,b) | a <- n2, b <- n2, a-b == 90] !! 0
+\end{code}
+
+ghci> a
+101
+ghci> b
+11
+
+This can be verified with:
+
+ghci> s + b == t + a
+True
+
+13. Equation 3 - m 
+
+In a similar manner to 12, we can substitute in our know values for a, s to the equation to solve for m. 
+
+m + IV = s + IIa
+= m + IV = 373 = 202
+= m + IV = 575
+= m = 571
+
+\begin{code}
+m :: Int
+m = filter (== 571) n5 !! 0
+\end{code}
+
+Using this much basic maths to hardcode the value for m feels slightly cheating, so we could reimplement this entirely using haskell:
+
+\begin{code}
+m' :: Int
+m' = filter (== (s + 2 * a - 4)) n5 !! 0
+\end{code}
+
+ghci> m'
+571
+ghci> m' == m
+True
+
+STEP THREE
+
+14. Equation 5 - qrs values
+
+We can reuse the above `match` to help us here as we know that the fix values for points that cross in the grid. 
+The numerals "CCCLXXIII" | "CCLXXXIII" must occupy 7a, 20a in either order. In the case of 7a the shared character is the second, and 20a the shared is the eight. 
+Therefore the placements can be deduced by finding matching seven character numerals with corresponding patterns.
+
+This presents a good opportunity for generalisation, namely we can define a function `crossMatch` which returns matching pairs from a given list of Pairs given some 
+index at which the lines cross. For example, `crossMatch p4 "XI" 1` should return all numerals of length four that share a character at index one with the input numeral (in this case 'I').
+
+In order to implement `crossMatch` we first need a way to dynamically generate patterns to match. This is achieved by implementing a function which given a Roman and an index will return 
+a string of '.' occupying all positions except the index (at which point the character of the numeral at that position is returned). 
+e.g. `fillDots "XII" 0` should return "X.." whereas `fillDots "XII" 1` should return ".I.". This patterns can then be fed into the `crossMatch` function to find all matches for the given pattern 
+within a group of numerals. 
+
+Previously some of the functions have been implemented using recursion and an accumulating parameter, for this implemention it was decided to follow a similar approach but using the foldl abstraction 
+instead of recursion.
+
+fillDots
+
+1. Iterates a ziped list of the input numeral (r) and it's length (as in the `enum` pattern seen earlier) and the accumulating parameter is instaniated as an empty string. 
+2. Pattern matching within the lambda is used to extract i, r from the enum
+3. if i == ix (where ix is the index passed in to the function) add the r value to the accumulating parameter
+4. otherwise, add the '.' character
+
+ghci> fillDots "CCLXXIII" 0
+"C......."
+
+crossMatch
+
+`crossMatch` is now implemented in a similar manner, but folding along all numerals in a list of Pairs, and
+accumulating all values which match a given pattern from a starting numeral and index. 
+
+e.g. `crossMatch p2 "CI" 0` will find all matching two character numerals where the zeroth character is 'C'. 
+
+ghci> crossMatch p2 "CI" 0
+[(101,"CI")]
+
+(Incidently, we've now answered 20d with this!)
+
+An additional helper function `overlap` is required to wrap the previously  defined `match` function. This is because the assumption of `match x, y` is that x and y are the same length,
+in fact we're now looking for patterns which would fit an when overlapping rather than direct like for like spaces of the same length. 
+To handle this, we simply need to take the first n characters of the x as these are all that are required to say whether two numerals of different length overlap around a shared character.  
+
+\begin{code}
+crossMatch:: [Pair] -> Roman -> Int -> [Pair]
+crossMatch (p:ps) r ix = foldl (\acc p -> if overlap r (fillDots (snd p) ix ) then acc ++ [p] else acc) [] (p:ps)
+
+overlap :: Roman -> Roman  -> Bool
+overlap a b = match (take (length b) a) b
+
+fillDots :: Roman -> Int -> String
+fillDots r ix = foldl (\acc (i, r) -> if i == ix then acc ++ [r]  else acc ++ ".") "" (zip [0..] r)
+
+\end{code}
+
+We can now put the above generic code together to find the possible values for qrs. To do this in the general sense we need to 
+Find all cross matches p r i for a given p of n length numerals, for all rs to be fit across the grid and for all `is` of the crossed index.
+
+e.g. (crossMatch p7 sr 1 ++ crossMatch p7 tr 1 ++ crossMatch p7 sr 6 ++ crossMatch p7 tr 6)
+
+Where 1, 6 are the crossing indexes in the grid of the shorter length space. Note coincidently both the first and sixth index (counting from zero) in sr and tr are the same ('C', 'I') so in this case we could 
+simplify the implemention to just: (crossMatch p7 sr 1 ++ crossMatch p7 sr 6) or (crossMatch p7 tr 1 ++ crossMatch p7 tr 6).
+
+ghci> crossMatch p7 tr 1 ++ crossMatch p7 tr 6 == crossMatch p7 sr 1 ++ crossMatch p7 sr 6
+True
+
+If we wanted to further genericise this would could do so by defining a function which avoids the need to hardcode the `pool` stage below, but rather takes a list 
+of pairs, a list of cross matching indexes and list of numerals to match against and permutates the possible outcomes into `crossMatch` to find the pool of candiate matches.
+
+Note this currently gives us a list of all possible values of qr, we need to finally turn this into a [(Pair, Pair)] in order to fulfill the function handle, we can find 
+these by plugining in the equation to a list comprehension as below.
+
+\begin{code}
+qrs :: [(Pair, Pair)]
+qrs = [(q, r) | q <- pool, r <- pool, (fst q) + 15 == 4 * (fst r)]
+    where pool = nub (crossMatch p7 sr 1 ++ crossMatch p7 tr 1 ++ crossMatch p7 sr 6 ++ crossMatch p7 tr 6)
+
+qrs' :: [(Pair, Pair)]
+qrs' = [(q, r) | q <- p7, r <- p7, (fst q) + 15 == 4 * (fst r)]
+
+\end{code}
+
+ghci> qrs
+[((317,"CCCXVII"),(83,"LXXXIII"))]
+
+As a point of comparison `qrs'` doesn't use a pool of cross matched numerals of (p7 sr tr), and we 
+can see that the last two candidates can be ruled out when considering the grid. 
+
+ghci> qrs'
+[((317,"CCCXVII"),(83,"LXXXIII")),((1741,"MDCCXLI"),(439,"CDXXXIX"))]
+
+15. `check` function
+
+The `fillDots` function above gets us most of the way there for implementing `check`. A slight refactor (indeed simplification) of the above logic 
+allows for `check`.
+
+\begin{code}
+check :: Int -> Int -> Char -> Pattern
+check n i c = foldl (\acc ix -> if i == ix then acc ++ [c]  else acc ++ ".") "" [0..n]
+\end{code}
+
+ghci> check 7 1 'C'
+".C......"
+ghci> check 7 0 'C'
+"C......."
+ghci> check 7 6 'C'
+"......C."
 
