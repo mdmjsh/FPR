@@ -7,3 +7,4 @@ http://learnyouahaskell.com/modules#data-list
 https://stackoverflow.com/questions/33394756/haskell-function-length-doesnt-work-with-custom-data-type
 https://hackage.haskell.org/package/base-4.14.1.0/docs/Data-List.html#v:nub
 https://hackage.haskell.org/package/base-4.14.1.0/docs/Prelude.html#v:drop
+https://hackage.haskell.org/package/base-4.14.1.0/docs/Data-List.html#v:tails

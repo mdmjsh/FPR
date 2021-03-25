@@ -531,7 +531,6 @@ d - Vt = c + n
 Note, a optimisation making use of transitivity is possible in a similar manner to question 6, but in this case the simple solution has been favoured as the 
 n * m inputs list (n3, n6) are much smaller so in this case simplicity can be favoured over optimisation.
 
-
 \begin{code}
 dtcns :: [(Int, Int,Int, Int)]
 dtcns = [(t+c+n, t,c,n) | c <- n3, n <- n6, let cn = c+n, let t = (fst (fst (sts !! 0))),  cn `elem` [d - t * 5 | d <- ds]]
@@ -798,4 +797,209 @@ ghci> check 7 0 'C'
 "C......."
 ghci> check 7 6 'C'
 "......C."
+
+16. 
+
+\begin{code}
+sevens :: [Pattern]
+sevens = [check 7 x (p !! x) |  (x, p) <- [ (x,p) | x<-[1,6], p<-[sr,tr]]]
+
+\end{code}
+
+Here a nested list comprehension is used to gather all combinations of sr,tr and [1,6] (where 1, 6 are the indices of the crossing points to check). 
+This is then patten matched in the encompassing list comprehension to pass every combination into the `check` funciton.  
+
+ghci> sevens
+[".C......",".C......","......I.","......I."]
+
+As discussed above, coincidently both sr st and tr have the same characters at the first and sixth indices:
+
+ghci> sr !! 6
+'I'
+ghci> tr !! 6
+'I'
+ghci> tr !! 1
+'C'
+ghci> sr !! 1
+'C'
+
+Hence the duplicate patterns seen.
+
+17. qr values
+
+Step 14. actually skipped ahead slight and already answered this question by implementing the `crossMatch` with the equation itself:
+ghci> qrs
+[((317,"CCCXVII"),(83,"LXXXIII"))]
+
+We can simply round this off with pattern matching:
+
+\begin{code}
+q,r :: Int
+qr, rr :: Roman
+((q, qr), (r, rr)) = qrs !! 0
+\end{code}
+
+ghci> q
+317
+ghci> qr
+"CCCXVII"
+ghci> r
+83
+ghci> rr
+"LXXXIII"
+ghci> 
+
+We can confirm the workings but plugin the results for q, r back into the equation: 
+
+ghci> q + 15 == 4 * r
+True
+
+STEP FOUR
+
+18. Equation 4 - nps 
+
+IIn = IIp + a + III
+
+\begin{code}
+
+nps :: [(Pair, Pair)]
+nps = [(toPair n, toPair p) | n <- ns, p <- n6, 2 * n == 2 * p + a + 3]
+    where ns = [n | (_,_,_, n) <- dtcns]
+\end{code}
+
+
+5. STEP FIVE
+
+19. Equation 2 
+
+e + f + g + h + k + VII = s + m
+
+The choose algorithm is implemented recursively with the following rules: 
+
+1. Move from left to right across the input x:xs
+2. When length x == k, add x to accumulator
+3. Otherwise move from left to right accross xs cons with x 
+
+
+We can prove this works with a couple of examples for k, and the list ['a'..'e']:
+
+k=1 
+
+1. scope = a 
+2. length scope == k, acc ++ a
+1. scope = b
+2. length scope == k, acc ++ b
+1. scpoe = c 
+2. length scope == k, acc ++ c ... 
+
+
+k=2 
+
+1. scope = a 
+2. length scope \= k
+3. Iterate items right of scope: 
+    1. scope = [a, b]
+    2. length scope == k, acc ++ [a, b]
+    1. scope = [a, c]
+    2. length scope == k, acc ++ [a, c]
+    1. scope = [a, d]
+    2. length scope == k, acc ++ [a, c]
+    1. scope = [a, e]
+    2. length scope == k, acc ++ [a, e]
+1. scope = b 
+2. length scope \= k
+3. Iterate items right of scope: 
+    1. scope = [b, c]
+    2. length scope == k, acc ++ [b, c]
+    1. scope = [b, d]
+    2. length scope == k, acc ++ [b, d]
+    1. scope = [b, e]
+    2. length scope == k, acc ++ [b,e]
+1. scope = c ... 
+
+
+k=3 
+
+1. scope = a
+2. length scope \= k
+3. Iterate items right of scope: 
+    1. scope=[a,b]
+    2. length scope \= k
+    3. Iterate items right of scope: 
+        1. scope = [a,b,c]
+        2. length scope == k, acc ++ [a,b,c]
+        1. scope = [a,b,d]
+        2. length scope == k, acc ++ [a,b,d]
+        1. scope = [a,b,e]
+        2. length scope == k, acc ++ [a,b,e]
+    1. scope=[a,c]
+    2. length scope \= k
+    3. Iterate items right of scope: 
+        1. scope = [a,c,d]
+        2. length scope == k, acc ++ [a,c,d]
+        1. scope = [a,c,e]
+        2. length scope == k, acc ++ [a,c,e]
+    1. scope = [a, d]
+    2. length scope \= k
+        3. Iterate items right of scope: 
+        1. scope = [a,d,e]
+    1. scope = [a,e]
+    2. length scope \= k
+    3. return acc
+1. scope = b
+2. length scope \= k
+3. Iterate items right of scope: 
+    1. scope = [b,c]
+    2. length scope \= k
+    3. Iterate items right of scope: 
+        1. scope = [b,c,d]
+        2. length scope == k, acc ++ [b,c,d]
+        1. scope = [b,c,e]
+        2. length scope == k, acc ++ [b,c,e]
+    ...
+
+
+
+
+\begin{code}
+--choose :: Eq a => Int -> [a] -> [[a]]
+--choose k (x:xs) =  map (\y -> x:(head xs) : y : []) (tail xs) : (choose k x:tail xs)
+--choose _ "" = ""
+
+choose' :: Eq a => Int -> [a] -> [a] -> [[a]] 
+choose' k s (r:rs:rss)
+    | length s < k = choose' k (s ++ [r]) rss  ++ choose' k (s ++ [rs]) rss
+    | length s == k = [s] 
+    -- ++ choose' k (s ++ [head rs]) (tail rs)
+    | length s > k = []
+choose' k s (r:[])
+    | k == 1 = [s] 
+    | otherwise = []
+
+
+choose k (x:xs) = choose' k [x] xs ++ choose k xs
+choose k [] = []
+    
+
+
+-- working map
+--choose k (s:rest) = map (\(s, r) -> choose' k s r) (zip s' rest')
+--    where s' = [s : r : [] | r <- rest] -- everything to the right of scope
+--          rest' = [xs | x:xs <- (tails rest)]
+    
+
+
+intersperse' _ [] = []
+intersperse' _ [x] = x 
+intersperse' s (x:y:xs) = x ++ [s] ++ y ++ intersperse' s xs
+
+
+\end{code}
+
+
+--choose k > length x:xs = []
+
+map (\y -> x:(head xs) : y : []) (tail xs)
+map (: (head (tail xs)) (x:head xs : [])
+
 
