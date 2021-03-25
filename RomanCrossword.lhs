@@ -968,16 +968,16 @@ k=3
 
 choose' :: Eq a => Int -> [a] -> [a] -> [[a]] 
 choose' k s (r:rs:rss)
-    | length s < k = choose' k (s ++ [r]) rss  ++ choose' k (s ++ [rs]) rss
+    | length s < k = choose' k (s ++ [r]) rss  ++ choose' k s (rs:rss)
     | length s == k = [s] 
-    -- ++ choose' k (s ++ [head rs]) (tail rs)
     | length s > k = []
 choose' k s (r:[])
-    | k == 1 = [s] 
-    | otherwise = []
+    | length s == k = [s] 
+    | otherwise = choose' k (s ++ [r]) []
 choose' k s []
-    | k == 1 = [s] 
+    | length s == k = [s] 
     | otherwise = []
+
 
 
 choose k (x:xs) = choose' k [x] xs ++ choose k xs
