@@ -975,6 +975,9 @@ choose' k s (r:rs:rss)
 choose' k s (r:[])
     | k == 1 = [s] 
     | otherwise = []
+choose' k s []
+    | k == 1 = [s] 
+    | otherwise = []
 
 
 choose k (x:xs) = choose' k [x] xs ++ choose k xs
