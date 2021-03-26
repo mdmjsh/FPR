@@ -936,3 +936,69 @@ ghci> choose 5 ['a'..'e']
 ["abcde"]
 ghci> choose 6 ['a'..'e']
 []
+
+20. Equation 2
+
+e + f + g + h + k + VII == s + m 
+= e + f + g + h + k + VII == 944
+= e + f + g + h + k == 937
+
+The approach for this is as follows:
+
+1. Find all candidates by first choosing 5 from n4 (all e..k exist in n4)
+2. Then filter these to only those which satify the equation - this yields a list of list of integers
+
+ghci> ns = filter (\x -> sum x == s + m - 7) (choose 5 n4)
+ghci> ns
+[[13,29,103,251,541],[13,53,211,251,409],[13,103,107,211,503],[29,53,103,211,541],[31,71,103,191,541],[31,71,103,211,521]]
+
+3. We then need to map each of these to pairs. As we're trying to map the ints in the list, we actually need to map to a map.
+This is achieved with currying and function application via `$` - `map (map toPair) $ ns`.  (http://learnyouahaskell.com/higher-order-functions#curried-functions)
+
+ghci> map (map toPair) $ ns
+[[(13,"XIII"),(29,"XXIX"),(103,"CIII"),(251,"CCLI"),
+(541,"DXLI")],[(13,"XIII"),(53,"LIII"),(211,"CCXI"),
+(251,"CCLI"),(409,"CDIX")],...]
+
+The `$` application allows for right-associative function application, i.e. allowing us to apply the `toPair` call to the mapped values from ns. This is just 
+syntactic sugar for using a lambda to achieve the same thing, e.g. `efghks = map (\x -> map toPair x) ns`. In truth, personally I'm not sure which one of these 
+syntaxes I find preferable in terms of readability, I'm not convinced the convenyience (and fewer keystrokes) gained from the additional opperator warrants the obfuscation
+it introduces, but this is a matter of taste of course.
+
+ghci> map (\x -> map toPair x) ns == efghks 
+True
+
+\begin{code}
+efghks :: [[Pair]]
+efghks = map (map toPair) $ ns
+    where ns = filter (\x -> sum x == s + m - 7) (choose 5 n4)
+\end{code}
+
+An alternative, cleaner implemention is possible if provide arthimatic opperations on pairs. In this case there would be no need to map toPair to the intermediate output
+as all opperations could just be applied on the pairs. 
+
+\begin{code}
+(+.) (x, _) (y, _) = toPair (x + y)
+\end{code}
+
+ghci> p4 !! 0 +. (p4 !! 1)
+(30,"XXX")
+ghci> p4 !! 0
+(13,"XIII")
+ghci> p4 !! 1
+(17,"XVII")
+
+To fully implement this we'd want Pair to derrive `num` and then declare all arthimatic opperator for Pairs, but this partial implemention does give us enough to refactor the above 
+code without the intermediate step:
+
+\begin{code}
+--sum' :: [Pair]
+--sum' (x:xs) = x +. (sum' xs)
+--sum' [] = []
+
+
+--efghks' :: [[Pair]]
+--efghks' = where ns = filter (\(e,f,g,h,k) -> +. == s + m - 7) (choose 5 n4)
+\end{code}
+
+
