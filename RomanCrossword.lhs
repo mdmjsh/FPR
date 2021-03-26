@@ -874,135 +874,65 @@ nps = [(toPair n, toPair p) | n <- ns, p <- n6, 2 * n == 2 * p + a + 3]
 
 e + f + g + h + k + VII = s + m
 
-The choose algorithm is implemented recursively with the following rules: 
+The choose algorithm with two recursive calls, one to move from left to right of 
+the input list and one to accumulate all choices of length k from that subset.
 
-1. Move from left to right across the input x:xs
-2. When length x == k, add x to accumulator
-3. Otherwise move from left to right accross xs cons with x 
+e.g. given the list [a..e]
 
+The problem can be expressesed as:
 
-We can prove this works with a couple of examples for k, and the list ['a'..'e']:
+choose' k scope rest ++ choose k rest
 
-k=1 
+where choose' is a function call which which accumulates all choices of length k from a given scope and rest, 
+and implements the following behaviour:
 
-1. scope = a 
-2. length scope == k, acc ++ a
-1. scope = b
-2. length scope == k, acc ++ b
-1. scpoe = c 
-2. length scope == k, acc ++ c ... 
+1. Patten match s (r:rs:rss) (signifying the scope and the rest)
+2. When length s == k, return s
+3. where length s < k, increase the scope by adding the head of the rest (e.g. r)
 
+N.b. (r:rs:rss) pattern matching is required rather than `head` / `tail` to avoid a 
+'*** Exception: Prelude.head: empty list', exception, therefore we also need patterns 
+to match the empty list and a list with fewer that three items (i.e. the counterpart to r:rs:rss)
 
-k=2 
+E.g. the ['a'.. 'e'] is traversed in the following manner:
 
-1. scope = a 
-2. length scope \= k
-3. Iterate items right of scope: 
-    1. scope = [a, b]
-    2. length scope == k, acc ++ [a, b]
-    1. scope = [a, c]
-    2. length scope == k, acc ++ [a, c]
-    1. scope = [a, d]
-    2. length scope == k, acc ++ [a, c]
-    1. scope = [a, e]
-    2. length scope == k, acc ++ [a, e]
-1. scope = b 
-2. length scope \= k
-3. Iterate items right of scope: 
-    1. scope = [b, c]
-    2. length scope == k, acc ++ [b, c]
-    1. scope = [b, d]
-    2. length scope == k, acc ++ [b, d]
-    1. scope = [b, e]
-    2. length scope == k, acc ++ [b,e]
-1. scope = c ... 
-
-
-k=3 
-
-1. scope = a
-2. length scope \= k
-3. Iterate items right of scope: 
-    1. scope=[a,b]
-    2. length scope \= k
-    3. Iterate items right of scope: 
-        1. scope = [a,b,c]
-        2. length scope == k, acc ++ [a,b,c]
-        1. scope = [a,b,d]
-        2. length scope == k, acc ++ [a,b,d]
-        1. scope = [a,b,e]
-        2. length scope == k, acc ++ [a,b,e]
-    1. scope=[a,c]
-    2. length scope \= k
-    3. Iterate items right of scope: 
-        1. scope = [a,c,d]
-        2. length scope == k, acc ++ [a,c,d]
-        1. scope = [a,c,e]
-        2. length scope == k, acc ++ [a,c,e]
-    1. scope = [a, d]
-    2. length scope \= k
-        3. Iterate items right of scope: 
-        1. scope = [a,d,e]
-    1. scope = [a,e]
-    2. length scope \= k
-    3. return acc
-1. scope = b
-2. length scope \= k
-3. Iterate items right of scope: 
-    1. scope = [b,c]
-    2. length scope \= k
-    3. Iterate items right of scope: 
-        1. scope = [b,c,d]
-        2. length scope == k, acc ++ [b,c,d]
-        1. scope = [b,c,e]
-        2. length scope == k, acc ++ [b,c,e]
-    ...
-
-
+s       r   rs  rss
+a       b   c   de  choose' k (a ++ [b]) cde
+ab      c   d   e   choose' k (ab ++ [c]) de
+abc     d   e   []  choose' k (abc ++ [d]) e
+abcd    e   []  []  choose' k (abcd ++ [e]) []
 
 
 \begin{code}
---choose :: Eq a => Int -> [a] -> [[a]]
---choose k (x:xs) =  map (\y -> x:(head xs) : y : []) (tail xs) : (choose k x:tail xs)
---choose _ "" = ""
-
 choose' :: Eq a => Int -> [a] -> [a] -> [[a]] 
 choose' k s (r:rs:rss)
-    | length s < k = choose' k (s ++ [r]) rss  ++ choose' k s (rs:rss)
+    | length s < k = choose' k (s ++ [r]) (rs:rss)  ++ choose' k s (rs:rss)
     | length s == k = [s] 
     | length s > k = []
 choose' k s (r:[])
     | length s == k = [s] 
-    | otherwise = choose' k (s ++ [r]) []
+    | otherwise =  choose' k (s ++ [r]) []
 choose' k s []
     | length s == k = [s] 
     | otherwise = []
 
-
-
+choose :: Eq a => Int -> [a] -> [[a]] 
 choose k (x:xs) = choose' k [x] xs ++ choose k xs
 choose k [] = []
     
-
-
--- working map
---choose k (s:rest) = map (\(s, r) -> choose' k s r) (zip s' rest')
---    where s' = [s : r : [] | r <- rest] -- everything to the right of scope
---          rest' = [xs | x:xs <- (tails rest)]
-    
-
-
-intersperse' _ [] = []
-intersperse' _ [x] = x 
-intersperse' s (x:y:xs) = x ++ [s] ++ y ++ intersperse' s xs
-
-
 \end{code}
 
-
---choose k > length x:xs = []
-
-map (\y -> x:(head xs) : y : []) (tail xs)
-map (: (head (tail xs)) (x:head xs : [])
-
-
+ghci> choose 0 ['a'..'e']
+[]
+ghci> choose 1 ['a'..'e']
+["a","b","c","d","e"]
+ghci> choose 2 ['a'..'e']
+["ab","ac","ad","ae","bc","bd","be","cd","ce","de"]
+ghci> choose 3 ['a'..'e']
+["abc","abd","abe","acd","ace","ade","bcd","bce","bde","cde"]
+ghci> choose 4 ['a'..'e']
+["abcd","abce","abde","acde","bcde"]
+ghci> choose 5 ['a'..'e']
+["abcde"]
+ghci> choose 6 ['a'..'e']
+[]
