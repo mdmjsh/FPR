@@ -592,11 +592,11 @@ sts'
 11. Pattern match
 
 This generalisation can be achieved with a simple recursive function and pattern matching and an accumulating parameter, 
-which in this case is simply a Boolean value of the previous characters checked. The rules for which can be summised as:
+which in this case is simply a Boolean value of the previous characters checked. The rules for which are:
 
 1. '.' is a wildcard - it matches any character
-2. if xi == yi for i in x,y those characters are a match
-3. match of [] [] returns the accumulator
+2. If xi == yi for i in x,y those characters are a match
+3. Match of [] [] returns the accumulator
 
 \begin{code}
 type Pattern = String
@@ -608,7 +608,7 @@ match' :: String -> String -> Bool -> Bool
 match'(x:xs) ('.':ys) b  = match' xs ys b
 match'(x:xs) (y:ys) _  = match' xs ys (x == y)
 match' [] [] b = b
-
+match' _ "" b = b
 
 \end{code}
 
@@ -697,7 +697,7 @@ The numerals "CCCLXXIII" | "CCLXXXIII" must occupy 7a, 20a in either order. In t
 Therefore the placements can be deduced by finding matching seven character numerals with corresponding patterns.
 
 This presents a good opportunity for generalisation, namely we can define a function `crossMatch` which returns matching pairs from a given list of Pairs given some 
-index at which the lines cross. For example, `crossMatch p4 "XI" 1` should return all numerals of length four that share a character at index one with the input numeral (in this case 'I').
+index at which the lines cross. For example, `crossMatch p4 "XI" 1` should return all numerals of length four that share a character at index one (of the search set) with the input numeral (in this case 'I').
 
 In order to implement `crossMatch` we first need a way to dynamically generate patterns to match. This is achieved by implementing a function which given a Roman and an index will return 
 a string of '.' occupying all positions except the index (at which point the character of the numeral at that position is returned). 
@@ -746,12 +746,12 @@ fillDots r ix = foldl (\acc (i, r) -> if i == ix then acc ++ [r]  else acc ++ ".
 \end{code}
 
 We can now put the above generic code together to find the possible values for qrs. To do this in the general sense we need to 
-Find all cross matches p r i for a given p of n length numerals, for all rs to be fit across the grid and for all `is` of the crossed index.
+Find all cross matches p r i for a given p of n length numerals, for all rs to be fit across the grid and for all i's of the crossed index.
 
-e.g. (crossMatch p7 sr 1 ++ crossMatch p7 tr 1 ++ crossMatch p7 sr 6 ++ crossMatch p7 tr 6)
+e.g. `(crossMatch p7 sr 1 ++ crossMatch p7 tr 1 ++ crossMatch p7 sr 6 ++ crossMatch p7 tr 6)`
 
 Where 1, 6 are the crossing indexes in the grid of the shorter length space. Note coincidently both the first and sixth index (counting from zero) in sr and tr are the same ('C', 'I') so in this case we could 
-simplify the implemention to just: (crossMatch p7 sr 1 ++ crossMatch p7 sr 6) or (crossMatch p7 tr 1 ++ crossMatch p7 tr 6).
+simplify the implemention to just: `(crossMatch p7 sr 1 ++ crossMatch p7 sr 6)`` or `(crossMatch p7 tr 1 ++ crossMatch p7 tr 6)`.
 
 ghci> crossMatch p7 tr 1 ++ crossMatch p7 tr 6 == crossMatch p7 sr 1 ++ crossMatch p7 sr 6
 True
@@ -827,7 +827,7 @@ Hence the duplicate patterns seen.
 
 17. qr values
 
-Step 14. actually skipped ahead slight and already answered this question by implementing the `crossMatch` with the equation itself:
+Step 14. actually skipped ahead slightly and already answered this question by implementing the `crossMatch` with the equation itself:
 ghci> qrs
 [((317,"CCCXVII"),(83,"LXXXIII"))]
 
@@ -978,6 +978,7 @@ An alternative, cleaner implemention is possible if provide arthimatic opperatio
 as all opperations could just be applied on the pairs. 
 
 \begin{code}
+(+.) :: Pair -> Pair -> Pair
 (+.) (x, _) (y, _) = toPair (x + y)
 \end{code}
 
@@ -992,13 +993,84 @@ To fully implement this we'd want Pair to derrive `num` and then declare all art
 code without the intermediate step:
 
 \begin{code}
---sum' :: [Pair]
---sum' (x:xs) = x +. (sum' xs)
---sum' [] = []
+sum' :: [Pair] -> Pair
+sum' (x:xs) =  x +. sum' xs
+sum' [] = toPair 0
 
-
---efghks' :: [[Pair]]
---efghks' = where ns = filter (\(e,f,g,h,k) -> +. == s + m - 7) (choose 5 n4)
+efghks' :: [[Pair]]
+efghks' = filter (\x -> (sum' x) +. toPair 7 == (toPair s +. toPair m )) (choose 5 p4)
 \end{code}
 
+ghci> efghks'
+[[(13,"XIII"),(29,"XXIX"),(103,"CIII"),(251,"CCLI"),(541,"DXLI")],
+[(13,"XIII"),(53,"LIII"),(211,"CCXI"),(251,"CCLI"),(409,"CDIX")],
+[(13,"XIII"),(103,"CIII"),(107,"CVII"),(211,"CCXI"),(503,"DIII")], 
+[(29,"XXIX"),(53,"LIII"),(103,"CIII"),(211,"CCXI"),(541,"DXLI")],
+[(31,"XXXI"),(71,"LXXI"),(103,"CIII"),(191,"CXCI"),(541,"DXLI")],
+[(31,"XXXI"),(71,"LXXI"),(103,"CIII"),(211,"CCXI"),(521,"DXXI")]]
+ghci> efghks' == efghks
+True
 
+STEP 6 
+
+21. d into 15a
+
+First we need to convert the potential `ds` into patterns which we can then use to check 
+for cross matches with 15a. This is achieved by mapping each value of `ds` to a numeral, and then 
+turning this into a pattern using the `fillDots` function, (n.b. the 1 passed into `fillDots` is the index at
+which we know 15a crosses with 16d):
+
+map (\y ->  fillDots (convertToNumeral y) 1 ) ds 
+[".D..",".D.."]
+
+We can then map each of these patterns against the `efghks` patterns. In the event that none fit, we've proven that 
+these values neither value for d fits in 16d. 
+
+      16d  
+15a. -X--
+      -
+      -
+      -
+
+N.b 'X' above dennotes the crossing point in the grid, not the character 'X'.
+
+
+Therefore, 16.d needs to match the following pattern: 
+gchi> layout $ check 3 0 'D'
+'D'
+'.'
+'.'
+'.'
+
+Therefore we can say that for all of j in efghks, if there exists a j for which the 
+zeroth character matches the first character of the pattern '.D..', then this combination of 
+patterns is a potential solution for this match.
+
+Conversely, if d were to be place in 16d, the cross patterns require a efghks with the first 
+character matching the zeroth character of d:
+
+gchi> map (\y ->  fillDots (convertToNumeral y) 0 ) ds 
+["M...","M..."]
+
+Meaning that a four character numeral  begining with 'M' must exist in efghks for this ordering to work.
+
+\begin{code}
+
+fits :: Pattern -> Int ->  Pattern -> Int -> Bool 
+fits x xi y yi = x !! xi == y !! yi
+
+dfits15a :: Bool
+dfits15a = any (==True) (map (\y -> fits a15s 1 y 0) d16s)
+    where d16s = map (\(x, j) -> check 3 0 (j !! 0)) (nub $ concat efghks)
+          a15s  = check 3 1 'D'
+
+dfits16d :: Bool
+dfits16d = any (==True) (map (\y -> fits d16s 0 y 1) a15s)
+    where a15s = map (\(x, j) -> check 3 1 (j !! 1)) (nub $ concat efghks)
+          d16s  = check 3 0 'M'
+\end{code}
+
+gchi> dfits15a
+True
+gchi> dfits16d 
+False
