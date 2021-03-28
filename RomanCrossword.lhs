@@ -521,7 +521,7 @@ ds' = filter (>= g) (map (fst) p4)
 ghci> ds'
 []
 
-Therefore we can plug the value for t into the equation. We can simplify the right hand side of the equation and to find possible values for c,n:
+Therefore we can plug the value for t into the equation. We can simplify the right hand side of the equation to find possible values for c,n:
 
 d - Vt = c + n 
 
@@ -575,14 +575,6 @@ implemention as a list comprehension and rull out any entries whose numerals do 
 
 sts' ::  [(Pair, Pair)]
 sts' = [x | x <- sts, (snd . fst) x !! 0 == 'C' || (snd . snd) x !! 0 == 'C' ]
-
--- pattern matching, incomplete
---zero = toPair 0
---findCs :: [(Pair, Pair)] -> [(Pair, Pair)] -> [(Pair, Pair)]
---findCs [(_, c:xs), y] acc = acc ++ (c:xs, y)
---findCs [x, (_, c:ys)] acc = acc ++ (x, c:ys)
---findCs [x, y] acc = acc
---    where c = 'C'
           
 \end{code}
 
@@ -605,6 +597,7 @@ match :: String -> String -> Bool
 match x y = match' x y True
 
 match' :: String -> String -> Bool -> Bool  
+match' _ _ False  = False
 match'(x:xs) ('.':ys) b  = match' xs ys b
 match'(x:xs) (y:ys) _  = match' xs ys (x == y)
 match' [] [] b = b
@@ -633,6 +626,8 @@ True
 ghci> match "CCLXXXIII" "C........"
 True
 ghci> match "CCLXXXIII" "C....D..."
+False
+ghci> match "CCLXXXIII" "D....X..."
 False
 
 Note, the accumulating parameter for match is started as True, this is because the all wildcard pattern should match any numeral of the same length.
@@ -1074,3 +1069,119 @@ gchi> dfits15a
 True
 gchi> dfits16d 
 False
+
+22. m in 22a
+
+Knowing that "CCCLXXIII" must occupy 1d meanings that in order for m to fit in 
+3d there would have to exist a p in p5 which obeyed the pattern "C.D..". We can 
+confirm this isn't the case quite simply as below:
+
+\begin{code}
+mfits3d :: Bool
+mfits3d = not $ null [x | (_, x) <- p5,  match x "C.D.."]
+\end{code}
+
+
+23. efghks''
+
+The list comprehension over the flattened `efghks` list shows that there fact only one entry that 
+matches either "D.C." or "D.C.": 
+
+gchi> [(x, y) | (x, y) <- nub $ concat efghks,  (match y "D.C." || match y "D.L.")]
+[(541,"DXLI")]
+
+As this is a list with just one item, we can simply plug it into a filter tto rule out any members of `efghks` that do not contain this entry:
+
+\begin{code}
+efghks'' :: [[Pair]]
+efghks'' = filter (\x -> p !! 0 `elem` x) efghks
+    where p = [(x, y) | (x, y) <- nub $ concat efghks,  (match y "D.C." || match y "D.L.")]
+\end{code}
+
+gchi> efghks''
+[[(13,"XIII"),(29,"XXIX"),(103,"CIII"),(251,"CCLI"),(541,"DXLI")],[(29,"XXIX"),(53,"LIII"),(103,"CIII"),(211,"CCXI"),(541,"DXLI")],[(31,"XXXI"),(71,"LXXI"),(103,"CIII"),(191,"CXCI"),(541,"DXLI")]]
+
+Furthermore, this also gives us 16d and 20a and therefore 7a.
+
+24. efghks'''
+
+A very similar approach can be taken here:
+
+
+\begin{code}
+efghks''' :: [[Pair]]
+efghks''' = [x | x <- efghks'', y <- cs, y `elem` x ]
+    where cs = [(x, y) | (x, y) <- nub $ concat efghks,  match y ".C.."]
+\end{code}
+
+gchi> efghks'''
+[[(13,"XIII"),(29,"XXIX"),(103,"CIII"),(251,"CCLI"),(541,"DXLI")],[(29,"XXIX"),(53,"LIII"),(103,"CIII"),(211,"CCXI"),(541,"DXLI")]]
+
+STEP SEVEN
+
+25. p into 9a
+
+We can prove that p only fits into 9a by contradiction. Let us assume that p does fit into 19a if this were to be the case then the values crossing 
+at 13d and 14d would match the patterns "..XX." and "..IIX" respectively (due to the crossing points from 20a). 
+Therefore the abscene of both of these patterns from `p5` would prove that p does not fit into 19a. 
+
+This can be tested with the same logic as was previously used testing whether a pattern fits a space, but let's create a more general function for it.
+
+\begin{code}
+fitsSpace :: [Pair] -> Pattern -> Bool
+fitsSpace  ps p = not $ null [x | (_, x) <- ps,  match x p]
+
+fitsPatterns :: [Pair] -> [Pattern] -> Bool
+fitsPatterns ps p = all (==True ) $ map (\x -> fitsSpace ps x) p
+
+\end{code}
+
+gchi> fitsPatterns p5 [".XXL", ".IIX"]
+False
+
+26. npdc
+
+First let us remind ourselves of the of the pool of potential values for dtcns:
+
+gchi> dtcns 
+[(379,283,7,89),(469,283,7,179),(469,283,19,167),(379,283,59,37),(469,283,59,127)]
+
+We now know that t is 283 and that n is one of 89, 179:
+
+gchi> nps
+[((89,"LXXXIX"),(37,"XXXVII")),((179,"CLXXIX"),(127,"CXXVII"))]
+
+We can therefore further eleminate some of the combinations from `dtcns`: 
+
+\begin{code}
+dtcns' :: [(Int, Int, Int, Int)]
+dtcns' = [(d,t,c,n) | (d,t,c,n)  <- dtcns, n `elem` [89, 179]]
+
+\end{code}
+
+gchi> dtcns'
+[(379,283,7,89),(469,283,7,179)]
+
+Now we've narrowed down `dtcns` once find which n fits the space in 19a we have therefore solved all of these values 
+and p (as p must therefore be the corresponding p in the `nps` to which the correct n belongs). 
+
+To find the correct n, we can reuse exactly the same logic as in the previous step as we know that whatever value fits in 19a must 
+also cross match with the patterns at 17d and 18d. 
+
+Therefore one for the numerals "LXXXIX", "CXXVII" must have corresponding matches in `p5`. 
+
+From "LXXXIX" the overlapping patterns at 13a and 14a would be ["..XX.", "..XIX"], and can confirm that there is indeed a match for both of these crossovers within `p5`:
+
+gchi> fitsPatterns p5 ["..XX.", "..XIX"]
+True
+
+This doesn't yet rule out "CXXVII", so to confirm that the only possible solution for `dtcns` is (379,283,7,89) we can plug in the alternative patterns:
+
+gchi> fitsPatterns p5 ["..XX.", "..IIX"]
+False
+
+Therefore, `dtcns` must equal (379,283,7,89). Having deduced that n = 89, we know therefore that p must be 37 (recall `nps = [((89,"LXXXIX"),(37,"XXXVII")),((179,"CLXXIX"),(127,"CXXVII"))]`). 
+
+
+STEP EIGHT
+
