@@ -22,31 +22,33 @@ Value	1	5	10	50	100	500	1000
 1. Convert Roman numerals to any positive integer up to 3999
 
 The solution is based on the realisation that Roman numerals can be viewed as a 
-point between lower, mid and upper symbols, where the magnitude of the number defines
+point between lower, mid and upper symbols, where the magnatude of the number defines
 the subset of symbols. From this we can see the following pattern is always obeyed in the
-standard system:  (L)+++-M+++-H. Where L, M, H are a subset of symbols from a set of numerals. 
+standard system:  (L)+++-M+++-H. Where L, M, H are a subset of symbols from set of numerals. 
 This can also be written as 
 
 N<3  | N=4  | N=5 | N<9 & N>5 | N=9
 L*N, |LM,   | M   | M+(d*L)   | L-H, 
 
 N is the number being converted, and d := the difference between the number and 
-the midpoint of the range (i.e. 5).
+the mid point of the range (i.e. 5).
 
-N.b. In contiguous magnatudes, the L of the second set is necessarily the H of the preceding set. 
+N.b. In contiguous magnatudes, the L of the second set is neccasarliy the H of the preceeding set. 
 
-When viewed in this way we can see that the numeral symbols can be grouped with the magnitude for which they are bounds as follows: 
+When viewed in this way we can see that the numeral symbols can be grouped with the magnatude for 
+which they are bounds as follows: 
 
 Units: "IVX"
 Tens: "XLC"
 Hundreds: "CDM"
 Thousands: "M"
 
-Note, that thousands only has a lower bound, hence the invariant that 3999 is the largest number that 
+Note, that thousands only has a lower bound, hence the invarient that 3999 is the largest number that 
 can be represented in this system. 
 
-The elegance of this number system is that the L*N, LM, M, M + (d*L) L-H described above holds at the 
-micro and macro level, meaning that we can utilise it to convert every digit of a number, and then simply concatenate the results back together E.g. 
+The elegance of this number system is that the L*N, LM, M, M + (d*L) L-H desribed above holds at the 
+micro and macro level, meaning that we can utalise it to convert every digit of a number, and then simply contatonate the results 
+back together E.g. 
 
 24 = Tens 2, units 4 
 Tens 1 = 2 * Lower bound for tens = XX
@@ -61,7 +63,7 @@ The below algorithm does exactly this, namely:
     [(3, "CDM"), (2, "XLC"), (1, "IVX")]
 2. Via a list comprehension, pass each tuple of this list to be converted (using `convertPostion` function), where `convertPostion` Implements the  L*N, LM, M, M + (d*L) L-H conversion pattern.
     -- e.g. ["C", "XX", "III"]
-3. Concatenate the resulting list of Strings together for the final output: 
+3. Concatonate the resulting list of Strings together for the final output: 
     -- e.g. "CXXIII"
 
 \begin{code}
@@ -91,12 +93,12 @@ convertPostion y
 Axioms: 
 
 1. 2* D, 1* M in grid
-2. Appearing in three entries, meaning that each appear separately from each other
+2. Appearing in three entries, meaning that each appear seperately from each other
 3. All entries are > three characters long
 
 The upper bound can be deduced logically by first working out the lowest and highest possible values in a searchspace if we were going to use a brute force approach. 
-We know that the upper bound must contain an M, so the lower bound is at least > 1000. Conversely, we know from axiom 2 that the three characters are split over separate entries, 
-meaning that an "MD" combination is not possible. Therefore we know that the upperbound must be less than 1400 as this is where MD pairing first appears. Therefore the upper bound is the 
+We know that the upper bound must contain an M, so the lower bound is at least > 1000. Conversly, we know from axiom 2 that the three characters are split over seperate entries, 
+meaning that an "MD" combination is not possible. Therefore we know that the upperbound must be less than 1400 as this is where MD pairing first appear. Therefore the upper bound is the 
 highest entry > three characters between 1000..1399. This actually turns out to be the maximum of this range, 1399, "MCCCXCIX". 
 
 \begin{code}
@@ -121,10 +123,10 @@ fi x
 
 \end{code}
 
-Note, this above implementation works before we've already deduced that the upper limit for the upper bound is 1399, therefore the algorithm is relying on the hard coded 
+Note, this above implemention works before we've already deduced that the upper limit for the upper bound is 1399, therefore the algorithm is relying on the hard coded 
 `upperBound' = f 1399`. For example if we change this line to `upperBound' = f 3999` the algorithm would fail as it fails to take into account only axiom 2, i.e. multiple 'M' are 
-not explicitly disallowed. If we wanted to abstract away some of the brain work and make this an entirely brute force approach that didn't rely on the initial hardcoded upper limit we 
-would have to check only instances of the letter occurs in the match. 
+not explictly disallowed. If we wanted to abstract away some of the brain work and make this an entirely bruteforce approach that didn't rely on the inital hardcoded upper limit we 
+would have to check only instance of the letter occurs in the match. 
 
 \begin{code}
 upperBound'' :: Int
@@ -141,7 +143,7 @@ f' x
 \end{code}
 
 
-This implementation confirms that our initial non brute force approaches were indeed correct:
+This implemention confirms that our inital non bruteforce approachs were indeed correct:
 
 ghci> upperBound
 1399
@@ -158,7 +160,7 @@ N.b. see below for details for the `isPrime` function used here.
 Initially it looked at this point that the solution had been found, however upon reaching q.6
 I was forced to question the assumptions made of the upper bound, at which point the realisation was made that 
 axiom two was incorrect as the entries could be overlapping in the grid. With this in mind, we can adjust the algorithm 
-to simply find the largest three character prime containing only one 'M'.  
+to simple find the largest three character prime containing only one 'M'.  
 
 \begin{code}
 upperBound''' :: Int
@@ -182,18 +184,18 @@ ghci> upperBound'''
 
 3. Bounded Primes
 
-For this problem the 'Sieve of Eratosthenes' is used to filter primes. 
-Turner (1975) is attributed to defining a functional implementation of the Sieve. 
+For this problem the 'Sieve of Eratosthenes' is used to filter identify primes. 
+Turner (1975) is attributed to defining a functional implemention of the Sieve. 
 In the Sieve algorithm, whenever a prime is identify all multiples of that prime can
 be removed ('sieved') out of the search space for possible primes, as it is known that they are 
-divisible by at least the identified prime. 
+divisable by the at least the identified prime. 
 
-Turner's implementation has been shown to be suboptimal asymptotically (https://www.cs.hmc.edu/~oneill/papers/Sieve-JFP.pdf).
-O'Neill (2009), brands the implementation as the 'unfaithful Sieve' arguing it is not an accurate 
-translation of the Sieve as described by Eratosthenes (due to how the non-primes are eliminated immediately after primes are found, 
+Turner's implemention has been shown to be suboptimal asymtopically (https://www.cs.hmc.edu/~oneill/papers/Sieve-JFP.pdf).
+O'Neill (2009), brands the implemention as the 'unfaithful Sieve' arguing it is not an accurate 
+translation of the Seive as described by Eratosthenes (due to how the non-primes are elimated immediately after primes are found, 
 rather than lazily and starting from the primes' square and working back towards the prime (O'Neill (2009))). 
 
-O'Neill instead presents the 'genuine Sieve of Eratosthenes' as follows, (n.b. this is slightly altered to handle x <= 1):
+O'Neill instead presents the 'genuine Seive of Eratosthenes' as follows, (n.b. this is slightly altered to handle x <= 1):
 
 \begin{code}
 primes = 2 : [x | x <- [3..], isPrime x]
@@ -205,12 +207,12 @@ isPrime x
 
 algorithm works as follows:
 
-primes := the list of all numbers which satisfy the predicate `isPrime`
+primes := the list of all numbers which satify the predicate `isPrime`
 isPrime:= Uses `all` and a lambda function to check that all values `p` of the iterable `factorsToTry` modulo x are greater 1.
 factorsToTry:= uses a takewhile loop to iterate all ps in primes that are <= x, starting from p squared.
 E.g. factorsToTry 17 is equal to [2,3]. 
 
-This is a beautiful implementation in haskell as both `primes` and `factorsToTry` reference each other in their definitions, meaning that
+This is a beautiful implemention in haskell as both `primes` and `factorsToTry` reference each other in their definitions, meaning that
 the lazy evaluation properties of haskell are put to optimum use as the `primes` infinite list is being dynamically evaluated up to x just 
 at the point it is required for computation.
 
@@ -277,9 +279,9 @@ numeralsOfLength x
 \end{code}
 
 
-This implementation works fine, however the issue with it is that for any value of i all numerals are checked. We could say that
-it is not really in the spirit of haskell, as the `numerals` list is greedily computed and exhaustively checked every time the `numeralsOfLength`
-function is called. A better solution is to lazily group the numerals by their length and then retrieve just the relevant grouping.
+This implemention works fine, however the issue with it is that for any value of i all numerals are checked. We could say that
+it is not really in the spirit of haskell, as the `numerals` list is greedily computed and exhaustively checked everytime the `numeralsOfLength`
+function is called. A better solution is to lazily group the numerals by their length and then retrieve just the relevent grouping.
 
 This can be refactored using sortBy, GroupBy and on as follows: 
 
@@ -799,7 +801,7 @@ sevens = [check 7 x (p !! x) |  (x, p) <- [ (x,p) | x<-[1,6], p<-[sr,tr]]]
 \end{code}
 
 Here a nested list comprehension is used to gather all combinations of sr,tr and [1,6] (where 1, 6 are the indices of the crossing points to check). 
-This is then patten matched in the encompassing list comprehension to pass every combination into the `check` function.  
+This is then patten matched in the encompassing list comprehension to pass every combination into the `check` funciton.  
 
 ghci> sevens
 [".C......",".C......","......I.","......I."]
@@ -871,14 +873,14 @@ the input list and one to accumulate all choices of length k from that subset.
 
 e.g. given the list [a..e]
 
-The problem can be expressed as:
+The problem can be expressesed as:
 
 choose' k scope rest ++ choose k rest
 
 where choose' is a function call which which accumulates all choices of length k from a given scope and rest, 
 and implements the following behaviour:
 
-1. Pattern match s (r:rs:rss) (signifying the scope and the rest)
+1. Patten match s (r:rs:rss) (signifying the scope and the rest)
 2. When length s == k, return s
 3. where length s < k, increase the scope by adding the head of the rest (e.g. r)
 
@@ -937,7 +939,7 @@ e + f + g + h + k + VII == s + m
 The approach for this is as follows:
 
 1. Find all candidates by first choosing 5 from n4 (all e..k exist in n4)
-2. Then filter these to only those which satisfy the equation - this yields a list of list of integers
+2. Then filter these to only those which satify the equation - this yields a list of list of integers
 
 ghci> ns = filter (\x -> sum x == s + m - 7) (choose 5 n4)
 ghci> ns
@@ -969,8 +971,8 @@ efghks = map (map toPair) $ ns
     where ns = filter (\x -> sum x == s + m - 7) (choose 5 n4)
 \end{code}
 
-An alternative, cleaner implementation is possible if providing arithmetic operations on pairs. In this case there would be no need to map toPair to the intermediate output
-as all operations could just be applied on the pairs. 
+An alternative, cleaner implemention is possible if provide arthimatic opperations on pairs. In this case there would be no need to map toPair to the intermediate output
+as all opperations could just be applied on the pairs. 
 
 \begin{code}
 (+.) :: Pair -> Pair -> Pair
@@ -984,7 +986,7 @@ ghci> p4 !! 0
 ghci> p4 !! 1
 (17,"XVII")
 
-To fully implement this we'd want Pair to derive `num` and then declare all arithmetic operator for Pairs, but this partial implementation does give us enough to refactor the above 
+To fully implement this we'd want Pair to derrive `num` and then declare all arthimatic opperator for Pairs, but this partial implemention does give us enough to refactor the above 
 code without the intermediate step:
 
 \begin{code}
@@ -1018,7 +1020,8 @@ which we know 15a crosses with 16d):
 map (\y ->  fillDots (convertToNumeral y) 1 ) ds 
 [".D..",".D.."]
 
-We can then map each of these patterns against the `efghks` patterns. In the event that none fit, we've proven that these values neither value for d fits in 16d. 
+We can then map each of these patterns against the `efghks` patterns. In the event that none fit, we've proven that 
+these values neither value for d fits in 16d. 
 
       16d  
 15a. -X--
@@ -1026,7 +1029,7 @@ We can then map each of these patterns against the `efghks` patterns. In the eve
       -
       -
 
-N.b 'X' above denotes the crossing point in the grid, not the character 'X'.
+N.b 'X' above dennotes the crossing point in the grid, not the character 'X'.
 
 
 Therefore, 16.d needs to match the following pattern: 
@@ -1046,7 +1049,7 @@ character matching the zeroth character of d:
 gchi> map (\y ->  fillDots (convertToNumeral y) 0 ) ds 
 ["M...","M..."]
 
-Meaning that a four character numeral  beginning with 'M' must exist in efghks for this ordering to work.
+Meaning that a four character numeral  begining with 'M' must exist in efghks for this ordering to work.
 
 \begin{code}
 
@@ -1089,7 +1092,7 @@ matches either "D.C." or "D.C.":
 gchi> [(x, y) | (x, y) <- nub $ concat efghks,  (match y "D.C." || match y "D.L.")]
 [(541,"DXLI")]
 
-As this is a list with just one item, we can simply plug it into a filter to rule out any members of `efghks` that do not contain this entry:
+As this is a list with just one item, we can simply plug it into a filter tto rule out any members of `efghks` that do not contain this entry:
 
 \begin{code}
 efghks'' :: [[Pair]]
@@ -1122,7 +1125,7 @@ STEP SEVEN
 
 We can prove that p only fits into 9a by contradiction. Let us assume that p does fit into 19a if this were to be the case then the values crossing 
 at 13d and 14d would match the patterns "..XX." and "..IIX" respectively (due to the crossing points from 20a). 
-Therefore the absence of both of these patterns from `p5` would prove that p does not fit into 19a. 
+Therefore the abscene of both of these patterns from `p5` would prove that p does not fit into 19a. 
 
 This can be tested with the same logic as was previously used testing whether a pattern fits a space, but let's create a more general function for it.
 
@@ -1150,7 +1153,7 @@ We now know that t is 283 and that n is one of 89, 179:
 gchi> nps
 [((89,"LXXXIX"),(37,"XXXVII")),((179,"CLXXIX"),(127,"CXXVII"))]
 
-We can therefore further eliminate some of the combinations from `dtcns`: 
+We can therefore further eleminate some of the combinations from `dtcns`: 
 
 \begin{code}
 dtcns' :: [(Int, Int, Int, Int)]
@@ -1202,7 +1205,7 @@ gchi> p3''
 
 28. 
 
-Various implementations for this were considered such as the common solution of swapping character at index i,j whilst traversing the input in a recursive function:
+Various implementions for this were considered such as the common solution of swapping character at index i,j whilst traversing the input in a recursive function:
 
 1. Starting from the first character, swap it with each possible character in the string. 
 2. Repeat starting with the the next character 
@@ -1210,10 +1213,10 @@ Various implementations for this were considered such as the common solution of 
 
 Or Heap's algorithm which switches items in the input depending on whether the current iteration through the input is an odd or even number.
 
-These approaches were rejected as they didn't seem to be the most functional in nature. That is to say reconstructing the input list by swapping indexes but leaving the rest untouched seems a functional antipattern 
-due to the requirement of data mutability; any attempt to do this in an immutable way would just require more temporary storage and would ultimately feel like working around the problem.
+These approachs were rejected as they didn't seem to be the most functional in nature. That is to say reconstructing the input list by swapping indexes but leaving the rest untouched seems a functional antipattern 
+due to the requirement of data mutability; any attempt to do this in an imutable way would just require more temporary storage and would ultimately feel like working around the problem.
 
-Instead a similar blueprint to the `choose` algorithm was followed, using the idea of finding the permutations of the scope and then the permutations of the rest. 
+Instead a similar blueprint to the `choose` algorithm was followed, using the idea of the finding the permutations of the scope and then the permutations of the rest. 
 
 1. Swap character 0 with all other characters (including itself) in the input
 2. For each of these subsets, perms = x ++ perms xs
@@ -1243,7 +1246,7 @@ swap i (x:xs) = [snd $ z !! i] ++ smaller ++ rest
 
 \end{code}
 
-N.b. Unfortunately, Due to time constraints, I was unable to fully implement the algorithm and so have used the standard `Data.List.permutations` for the following questions.
+N.b. Unfortuntely, Due to time constraints, I was unable to fully implement the algorithm and so have used the standard `Data.List.permutations` for the following questions.
 
 29. 
 
@@ -1252,9 +1255,9 @@ For a given permutation of the values of p3'' we need to check each againsts it'
 do not need to check every single pattern. As all permutations need to match with a pattern, if any of the patterns do not match 
 we can immediately return False for that grouping; only exhausting the search space when all patterns do match a corresponding set of permutations.
 
-This is a prime example of the benefit of haskell's lazily evaluation - in an eagerly evaluated language the zip operation of would require n! space as all of the 'zipping'
+This is a prime example of the benefit of haskell's lazily evaluation - in an eagerly evaluated language the zip opperation of would require n! space as all of the 'zipping'
 would be performed ahead of running the `ok'` function (i.e. constructing the full [(Pair, Pattern)]...) for all of `ps`. Here the zip is only subsequently evaluated in ok' 
-after the pattern matching has occurred.
+after the pattern matching has occured.
 
 
 \begin{code}
@@ -1296,7 +1299,7 @@ STEP NINE
 
 30. efghk values 
 
-We can deduce the values for efghk by first filtering out all of those which contain the now eliminated "LIII" numeral, and the applying further logic from the already
+We can deduce the values for efghk by first filtering out all of those which contain the now elimated "LIII" numeral, and the applying further logic from the already
 completed grid. 
 
 filter  (\x -> not $ (53,"LIII") `elem` x) efghks'' 
@@ -1356,7 +1359,7 @@ a13ds = find' p5 ["..XX."]
 \end{code}
 
 The cross of 13d, 13a and 11d have to be found together as they are so interlinked. Using the same approach above 
-show there are still multiple results possible for 13a and 13d which satisfy both space:
+show there are still multiple results possible for 13a and 13d which satify both space:
 
 gchi> a13ds = find' p5 ["..XX."]
 gchi> a13ds
@@ -1397,14 +1400,14 @@ a11as = nub $ concat [x | x <- (map (\p -> find' p4 [p]) [[y !! 0] ++ "I.." | (_
 \end{code}
 
 This still yields multiple possible solutions, so we will need to broaden our search to include 5d. As it happens all of the potential solutions for 11d end in "I", 
-so we know that the answer for 5d must match ".III".
+so we know that the answer for 5d must much ".III".
 
 \begin{code}
 a5ds = find' p4 [".III"]
 -- [(13,"XIII"),(53,"LIII"),(103,"CIII"),(503,"DIII")]
 \end{code}
 
-We're slightly closer, but there are still multiple solutions for all positions currently. Let's remind ourselves of all the values in the search space: 
+We're slightly closer, but there are still multiple solutions for all position currently. Let's remind ourselves of all the values in the search space: 
 
 gchi> a13ds
 [(131,"CXXXI"),(421,"CDXXI"),(571,"DLXXI"),(1031,"MXXXI")]
@@ -1421,7 +1424,7 @@ Note that a13as and a11ds fit the same numerals.
 
 Let us assume that a13d = (131,"CXXXI")
 - In this case a13a must either (151,"CLI"),(401,"CDI").
-- We can rule out "CDI" as there would be no corresponding ".D." pattern in a11ds. In fact we can go further, and say 
+- We can rule out "CDI" as there would is no corresponding ".D." pattern in a11ds. In fact we can go further, and say 
 that the only two patterns that share a central character in a11ds (which is the same set as a13as) are (151,"CLI"), (1051,"MLI"). 
 This means that these two must occupy these spaces, but we don't yet know the order.
 
@@ -1438,7 +1441,7 @@ a13ds' = map (\x -> find' a13ds [x]) ["CXX", "MXX"]
 -- [[(131,"CXXXI")],[(1031,"MXXXI")]]
 \end{code}
 
-Going back to 13a, whichever of [(151,"CLI"),(1051,"MLI")] it is, 11d is the other. We can use this to match 11a.
+Going back to 13a, which ever of [(151,"CLI"),(1051,"MLI")] it is, 11d is the other. We can use this to match 11a.
 
 Assuming 13a = [(151,"CLI")], then 11d = [(1051,"MLI"], which means that 11a must match "MI.."
 
@@ -1488,7 +1491,8 @@ gchi> a21a = find' p3 ["I.I"]
 gchi> a21a
 [(3,"III")]
 
-I was unable to find unique solutions for the remain 3 tiles as there was a large cross over in the search space between them, clearly there was a mis-step here somewhere but due to time constraints I was unfortunately not able to complete the solution.
+I was unable to find unque solutions for the remain 3 tiles as there was a large cross over in the search space between them, clearly there was a mis-step here somewhere but 
+due to time constraints I was unfortuntely not able to complete the solution.
 
 gchi> find' p3 ["..X"]
 [(19,"XIX"),(59,"LIX"),(109,"CIX"),(509,"DIX"),(1009,"MIX")]
@@ -1517,4 +1521,3 @@ https://hackage.haskell.org/package/base-4.14.1.0/docs/Data-List.html#v:tails
 http://learnyouahaskell.com/higher-order-functions#curried-functions
 https://hackage.haskell.org/package/base-4.14.1.0/docs/GHC-List.html#v:concat
 http://zvon.org/other/haskell/Outputprelude/any_f.html
-

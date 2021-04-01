@@ -1,0 +1,40 @@
+permutations of [a,b,c] := 
+    a + permutations of [b,c] ++
+    b + permutations of [a,c] ++ 
+    c + permutations of [a,b]
+
+Which can be generalised: 
+
+permutations of [r,rs,rss] := 
+    r + permutations [rs, rss] ++
+    rs ++ permutations [r, rss] ++ 
+    permutations rss + rs + r
+
+E.g. perms abc = 
+
+-- a + perms [b, c]            a 
+    -- b + perms c             b
+        -- c + perms []        c
+            -- []              []
+    -- ++ c + perms b          c
+        -- b + perms []        b
+            -- []              []
+
+-- b + perms [a, c]           b
+    -- a + perms [c]          a 
+        -- c + perms []       c
+            -- []             []
+    -- ++ c + perms [a]       c  
+        -- a + perms []       a
+            -- []             []
+
+-- perms [c, b, a]            
+    -- c + perms [b, a]       c
+        -- b + perms [a]      b
+            -- a + perms []   a
+                -- []         []
+        -- ++ a + perms [b]   a
+            -- b + perms []   b
+                -- perms []   []
+
+-- [[a,b,c], [a,c,b], [b,a,c], [b,c,a], [c,b,a], [c,a,b]]

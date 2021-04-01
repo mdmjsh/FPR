@@ -10,3 +10,4 @@ https://hackage.haskell.org/package/base-4.14.1.0/docs/Prelude.html#v:drop
 https://hackage.haskell.org/package/base-4.14.1.0/docs/Data-List.html#v:tails
 http://learnyouahaskell.com/higher-order-functions#curried-functions
 https://hackage.haskell.org/package/base-4.14.1.0/docs/GHC-List.html#v:concat
+http://zvon.org/other/haskell/Outputprelude/any_f.html
